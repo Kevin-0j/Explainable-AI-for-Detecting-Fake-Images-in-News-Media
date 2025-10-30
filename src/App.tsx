@@ -7,12 +7,13 @@ import { UploadFlow } from "./components/upload-flow";
 import { AdminPanel } from "./components/admin-panel";
 import { DemoFlow } from "./components/demo-flow";
 import { Toaster } from "./components/ui/sonner";
+import { VerificationProvider } from "./contexts/VerificationContext";
 
 type AppScreen = "landing" | "auth" | "dashboard" | "upload" | "admin" | "demo";
 
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("landing");
-  const { isAuthenticated, clearAuth, isLoading } = useAuth();
+  const { isAuthenticated, clearAuth, isLoading, user } = useAuth();
   const [forceShowApp, setForceShowApp] = useState(false);
 
   const handleAuthSuccess = () => {
@@ -23,6 +24,13 @@ function AppContent() {
     await clearAuth();
     setCurrentScreen("landing");
   };
+
+  // Auto-redirect to dashboard if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated && currentScreen === "landing") {
+      setCurrentScreen("dashboard");
+    }
+  }, [isAuthenticated, currentScreen]);
 
   // Force show app after 8 seconds if still loading
   React.useEffect(() => {
@@ -127,7 +135,9 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <VerificationProvider>
+        <AppContent />
+      </VerificationProvider>
     </AuthProvider>
   );
 }

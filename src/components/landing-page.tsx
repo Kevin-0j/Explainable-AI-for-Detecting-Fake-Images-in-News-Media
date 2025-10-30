@@ -14,7 +14,7 @@ export function LandingPage({ onGetStarted, onViewDemo }: { onGetStarted: () => 
             <span className="text-2xl font-semibold text-foreground">NewsSight</span>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" className="text-foreground">Login</Button>
+            <Button variant="ghost" className="text-foreground" onClick={onGetStarted}>Login</Button>
             <Button onClick={onGetStarted} className="bg-primary text-primary-foreground hover:bg-primary/90">
               Get Started
             </Button>
