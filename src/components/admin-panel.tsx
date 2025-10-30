@@ -21,12 +21,14 @@ import {
   AlertCircle,
   Clock,
   Activity,
-  BarChart3
+  BarChart3,
+  Loader2
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { useAuth } from "../contexts/AuthContext";
-import { getAllUsers, getAdminStats, getAllVerifications, getDatasets, addDataset, updateUserRole } from "../utils/api";
-import { toast } from "sonner@2.0.3";
+import { getAllUsers, getAdminStats, getAllVerifications, getDatasets, addDataset, updateUserRole, calibrateVerifications } from "../utils/api";
+import { toast } from "sonner";
+import { useVerificationStore } from "../contexts/VerificationContext";
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -34,6 +36,7 @@ interface AdminPanelProps {
 
 export function AdminPanel({ onBack }: AdminPanelProps) {
   const { accessToken, user } = useAuth();
+  const { temperature, setTemperature } = useVerificationStore();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -42,6 +45,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
   const [verifications, setVerifications] = useState<any[]>([]);
   const [datasets, setDatasets] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [calibrationFile, setCalibrationFile] = useState<File | null>(null);
+  const [calibrationBaseDir, setCalibrationBaseDir] = useState("");
+  const [isCalibrating, setIsCalibrating] = useState(false);
+  const [calibrationDetail, setCalibrationDetail] = useState<string | null>(null);
 
   const fetchAdminData = useCallback(async () => {
     if (!accessToken) return;
@@ -56,7 +63,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
         getDatasets(accessToken),
       ]);
 
-      if (statsRes.success) setStats(statsRes.stats);
+      if (statsRes.success) {
+        setStats(statsRes.stats);
+        setTemperature(statsRes.stats?.temperature ?? null);
+      }
       if (usersRes.success) setUsers(usersRes.users);
       if (verificationsRes.success) setVerifications(verificationsRes.verifications);
       if (datasetsRes.success) setDatasets(datasetsRes.datasets);
@@ -66,7 +76,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, setTemperature]);
 
   // Check if user is admin
   useEffect(() => {
@@ -95,6 +105,45 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     } catch (error) {
       console.error('Error updating user role:', error);
       toast.error('Failed to update user role');
+    }
+  };
+
+  const handleCalibration = async () => {
+    if (!accessToken) return;
+    if (!calibrationFile) {
+      toast.error("Please select a CSV file to upload");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", calibrationFile);
+    if (calibrationBaseDir.trim()) {
+      formData.append("base_dir", calibrationBaseDir.trim());
+    }
+
+    setIsCalibrating(true);
+    setCalibrationDetail(null);
+
+    try {
+      const response = await calibrateVerifications(accessToken, formData);
+      if (!response.success) {
+        throw new Error(response.error || "Calibration failed");
+      }
+
+      if (response.temperature !== undefined) {
+        setTemperature(response.temperature);
+      }
+
+      const detail = response.detail || "Calibration completed successfully";
+      setCalibrationDetail(detail);
+      toast.success(detail);
+      fetchAdminData();
+    } catch (error: any) {
+      console.error('Calibration error:', error);
+      toast.error(error?.message || 'Calibration failed');
+      setCalibrationDetail(error?.message || 'Calibration failed');
+    } finally {
+      setIsCalibrating(false);
     }
   };
 
@@ -331,6 +380,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
             <TabsTrigger value="audit" className="data-[state=active]:bg-background">
               <Clock className="mr-2 h-4 w-4" />
               Audit Log
+            </TabsTrigger>
+            <TabsTrigger value="calibration" className="data-[state=active]:bg-background">
+              <Activity className="mr-2 h-4 w-4" />
+              Calibration
             </TabsTrigger>
           </TabsList>
 
@@ -623,6 +676,85 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Calibration Tab */}
+          <TabsContent value="calibration" className="space-y-6">
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-foreground">Score Calibration</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      Upload labeled samples to recalibrate model confidence scores
+                    </CardDescription>
+                  </div>
+                  <Badge variant="secondary" className="border-border">
+                    Current temperature: <span className="ml-1 text-foreground font-medium">{temperature !== null ? temperature.toFixed(2) : "—"}</span>
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="calibrationFile" className="text-foreground">Labeled CSV</Label>
+                      <Input
+                        id="calibrationFile"
+                        type="file"
+                        accept=".csv"
+                        onChange={(event) => setCalibrationFile(event.target.files?.[0] || null)}
+                        className="bg-input-background border-border text-foreground"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        CSV should include <code>path</code> and <code>label</code> columns. Labels must be <em>real</em> or <em>fake</em>.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="baseDir" className="text-foreground">Base directory (optional)</Label>
+                      <Input
+                        id="baseDir"
+                        value={calibrationBaseDir}
+                        onChange={(event) => setCalibrationBaseDir(event.target.value)}
+                        placeholder="/absolute/path/to/images"
+                        className="bg-input-background border-border text-foreground"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Provide a base directory if your CSV paths are relative.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-dashed border-border p-4 bg-muted/40 text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground mb-2">Calibration tips</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Include a balanced set of recent samples.</li>
+                        <li>Use consistent labeling (<code>real</code> / <code>fake</code>).</li>
+                        <li>Re-run calibration when the model drifts.</li>
+                      </ul>
+                    </div>
+                    <Button
+                      onClick={handleCalibration}
+                      disabled={!calibrationFile || isCalibrating}
+                      className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {isCalibrating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Calibrating...
+                        </>
+                      ) : (
+                        "Run Calibration"
+                      )}
+                    </Button>
+                    {calibrationDetail && (
+                      <p className="text-xs text-muted-foreground">{calibrationDetail}</p>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

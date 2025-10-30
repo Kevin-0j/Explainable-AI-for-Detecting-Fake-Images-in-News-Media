@@ -4,6 +4,7 @@ import { logger } from "npm:hono/logger";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import * as kv from "./kv_store.tsx";
 import { initDemoUsers } from "./init-demo-users.tsx";
+import { syncOAuthUser } from "./sync-oauth-user.tsx";
 
 const app = new Hono();
 
@@ -160,10 +161,12 @@ app.get("/make-server-9dc263ad/auth/me", async (c) => {
     }
 
     // Get full profile from KV store
-    const userProfile = await kv.get(`user:${user.id}`);
+    let userProfile = await kv.get(`user:${user.id}`);
 
+    // If profile doesn't exist (e.g., OAuth user), create it
     if (!userProfile) {
-      return c.json({ error: 'User profile not found' }, 404);
+      console.log('User profile not found, syncing OAuth user:', user.id);
+      userProfile = await syncOAuthUser(user);
     }
 
     return c.json({ 

@@ -1,6 +1,8 @@
+// src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getSupabase } from '../utils/supabase/client';
-import { getCurrentUser } from '../utils/api';
+import { getCurrentUser, exchangeSupabaseToken, getBackendSession, refreshAccessToken } from '../utils/api';
+import { toast } from 'sonner';
 
 interface User {
   id: string;
@@ -16,6 +18,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   accessToken: string | null;
+  user_id: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   setAuth: (user: User, accessToken: string) => void;
@@ -25,100 +28,125 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// No longer syncing user via /users/sync after OAuth exchange
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const hasCheckedSession = useRef(false);
 
-  // Check for existing session on mount
-  useEffect(() => {
-    // Only check session once
-    if (hasCheckedSession.current) return;
-    hasCheckedSession.current = true;
-
-    checkSession();
-  }, []);
-
+  /* --------------------------------------------------------------
+     SESSION CHECK (page load / refresh)
+     -------------------------------------------------------------- */
   const checkSession = async () => {
     try {
-      // Set a timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Session check timeout')), 5000);
-      });
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      const checkPromise = (async () => {
-        const supabase = getSupabase();
-        const { data: { session }, error } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const ex = await exchangeSupabaseToken(session.access_token);
+        if (ex.success && ex.data) {
+          const { access_token, refresh_token, user: backendUser } = ex.data;
+          localStorage.setItem('access_token', access_token);
+          localStorage.setItem('refresh_token', refresh_token);
 
-        if (error) {
-          console.error('Error checking session:', error);
-          return;
+          const sess = await getBackendSession(access_token);
+          const u = (sess.success && sess.data?.user) ? (sess.data.user as any) : (backendUser as any);
+          const normalized: User = {
+            id: String(u.id ?? u.user_id ?? u.uuid ?? ''),
+            email: u.email ?? '',
+            firstName: u.first_name ?? u.firstName ?? 'User',
+            lastName: u.last_name ?? u.lastName ?? '',
+            organization: u.organization ?? undefined,
+            role: (u.role as 'user' | 'admin') ?? 'user',
+            createdAt: u.created_at ?? u.createdAt ?? new Date().toISOString(),
+            lastLogin: u.last_login ?? u.lastLogin ?? new Date().toISOString(),
+          };
+          setUser(normalized);
+          setAccessToken(access_token);
         }
-
-        if (session?.access_token) {
-          // Fetch user profile from backend
-          try {
-            const response = await getCurrentUser(session.access_token);
-            if (response.success && response.user) {
-              setUser(response.user);
-              setAccessToken(session.access_token);
-            }
-          } catch (err) {
-            console.error('Error fetching user profile:', err);
-            // Don't await signOut to avoid hanging
-            supabase.auth.signOut().catch(console.error);
-          }
-        }
-      })();
-
-      await Promise.race([checkPromise, timeoutPromise]);
-    } catch (error) {
-      console.error('Session check error:', error);
-      // Continue anyway - user can log in manually
+      }
+    } catch (e) {
+      console.error('checkSession error:', e);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const setAuth = (newUser: User, newAccessToken: string) => {
+  useEffect(() => {
+    if (hasCheckedSession.current) return;
+    hasCheckedSession.current = true;
+
+    checkSession();
+
+    const supabase = getSupabase();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        const ex = await exchangeSupabaseToken(session.access_token);
+        if (ex.success && ex.data) {
+          const { access_token, refresh_token, user: backendUser } = ex.data;
+          localStorage.setItem('access_token', access_token);
+          localStorage.setItem('refresh_token', refresh_token);
+
+          const sess = await getBackendSession(access_token);
+          const u = (sess.success && sess.data?.user) ? (sess.data.user as any) : (backendUser as any);
+          const normalized: User = {
+            id: String(u.id ?? u.user_id ?? u.uuid ?? ''),
+            email: u.email ?? '',
+            firstName: u.first_name ?? u.firstName ?? 'User',
+            lastName: u.last_name ?? u.lastName ?? '',
+            organization: u.organization ?? undefined,
+            role: (u.role as 'user' | 'admin') ?? 'user',
+            createdAt: u.created_at ?? u.createdAt ?? new Date().toISOString(),
+            lastLogin: u.last_login ?? u.lastLogin ?? new Date().toISOString(),
+          };
+          setUser(normalized);
+          setAccessToken(access_token);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setAccessToken(null);
+        localStorage.removeItem('user_id');
+        setUserId(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const setAuth = (newUser: User, newToken: string) => {
     setUser(newUser);
-    setAccessToken(newAccessToken);
+    setAccessToken(newToken);
   };
 
   const clearAuth = async () => {
-    // Clear state immediately
     setUser(null);
     setAccessToken(null);
-
-    // Try to sign out from Supabase, but don't wait if it fails
-    try {
-      const supabase = getSupabase();
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('SignOut timeout')), 3000);
-      });
-      
-      await Promise.race([
-        supabase.auth.signOut(),
-        timeoutPromise
-      ]);
-    } catch (error) {
-      console.error('Error during sign out:', error);
-      // Continue anyway - local state is already cleared
-    }
+    setUserId(null);
+    const supabase = getSupabase();
+    await supabase.auth.signOut();
   };
 
   const refreshUser = async () => {
     if (!accessToken) return;
-
-    try {
-      const response = await getCurrentUser(accessToken);
-      if (response.success && response.user) {
-        setUser(response.user);
-      }
-    } catch (error) {
-      console.error('Error refreshing user:', error);
-      // If token is invalid, clear auth
+    const resp = await getCurrentUser(accessToken);
+    if (resp.success && resp.user) {
+      const u = resp.user as any;
+      const normalized: User = {
+        id: String(u.id ?? u.user_id ?? u.uuid ?? ''),
+        email: u.email ?? '',
+        firstName: u.first_name ?? u.firstName ?? 'User',
+        lastName: u.last_name ?? u.lastName ?? '',
+        organization: u.organization ?? undefined,
+        role: (u.role as 'user' | 'admin') ?? 'user',
+        createdAt: u.created_at ?? u.createdAt ?? new Date().toISOString(),
+        lastLogin: u.last_login ?? u.lastLogin ?? new Date().toISOString(),
+      };
+      setUser(normalized);
+    } else {
       clearAuth();
     }
   };
@@ -128,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         accessToken,
+        user_id: userId,
         isLoading,
         isAuthenticated: !!user && !!accessToken,
         setAuth,
@@ -141,9 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 }
