@@ -1,0 +1,4 @@
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/runpy.py:127: RuntimeWarning: 'backend.app' found in sys.modules after import of package 'backend', but prior to execution of 'backend.app'; this may result in unpredictable behaviour
+  warn(RuntimeWarning(msg))
+OMP: Error #179: Function Can't open SHM2 failed:
+OMP: System error #1: Operation not permitted
