@@ -72,6 +72,23 @@ type BackendAnalysisResult = {
   model?: BackendDetectionModel | null;
 };
 
+export type AssistantAnalysis = {
+  risk_level: 'low' | 'medium' | 'high';
+  tldr: string;
+  key_cues: string[];
+  next_steps: string[];
+  caveats: string[];
+  raw_text?: string;
+};
+
+const buildDefaultAssistantAnalysis = (): AssistantAnalysis => ({
+  risk_level: 'medium',
+  tldr: 'The assistant summary is unavailable; please interpret the model decision manually.',
+  key_cues: [],
+  next_steps: [],
+  caveats: [],
+});
+
 type BackendPredictResponse = {
   message: string;
   media_file: BackendMediaFile;
@@ -318,14 +335,14 @@ class ApiService {
     prediction: 'authentic' | 'deepfake';
     confidence: number;
     file_name: string;
-  }): Promise<string> {
-    const data = await this.request<{ explanation?: string }>('/explain', {
+  }): Promise<AssistantAnalysis> {
+    const data = await this.request<{ analysis?: AssistantAnalysis }>('/explain', {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(payload),
     });
 
-    return data.explanation ?? '';
+    return data.analysis ?? buildDefaultAssistantAnalysis();
   }
 
   async fetchLimeVisualization(resultId: string): Promise<string | null> {

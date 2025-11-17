@@ -11,6 +11,8 @@ export interface Verification {
   status: VerificationStatusType;
   model_version: string;
   metadata?: Record<string, unknown>;
+  gradcam_image_url?: string | null;
+  lime_image_url?: string | null;
   created_at: string;
   updated_at: string;
 }

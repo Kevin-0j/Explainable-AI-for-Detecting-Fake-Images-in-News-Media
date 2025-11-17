@@ -7,7 +7,6 @@ import { Progress } from './ui/progress';
 import {
   Shield,
   ArrowLeft,
-  MessageCircle,
   AlertTriangle,
   Sparkles,
   Scan,
@@ -15,7 +14,9 @@ import {
 } from 'lucide-react';
 import type { DetectionResult, User } from '../App';
 import { api } from '../services/api';
+import type { AssistantAnalysis } from '../services/api';
 import { toast } from 'sonner';
+import { ExplanationCard } from './ExplanationCard/ExplanationCard';
 
 interface ResultsPageProps {
   navigate: (page: string) => void;
@@ -25,9 +26,9 @@ interface ResultsPageProps {
 }
 
 export function ResultsPage({ navigate, user, logout, result }: ResultsPageProps) {
-  const [explanation, setExplanation] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<AssistantAnalysis | null>(null);
   const [isExplanationLoading, setIsExplanationLoading] = useState(false);
-  const [explanationError, setExplanationError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [limeImage, setLimeImage] = useState<string | null>(null);
   const [limeError, setLimeError] = useState<string | null>(null);
   const [isLimeLoading, setIsLimeLoading] = useState(false);
@@ -84,8 +85,8 @@ export function ResultsPage({ navigate, user, logout, result }: ResultsPageProps
   useEffect(() => {
     if (!result?.id) return;
 
-    setExplanation(null);
-    setExplanationError(null);
+    setAnalysis(null);
+    setAnalysisError(null);
     setLimeImage(null);
     setLimeError(null);
 
@@ -94,13 +95,13 @@ export function ResultsPage({ navigate, user, logout, result }: ResultsPageProps
     const fetchExplanation = async () => {
       try {
         setIsExplanationLoading(true);
-        const explanationText = await api.fetchExplanation({
+        const analysisPayload = await api.fetchExplanation({
           prediction: result.result,
           confidence: result.confidence / 100,
           file_name: result.fileName,
         });
         if (!controller.signal.aborted) {
-          setExplanation(explanationText);
+          setAnalysis(analysisPayload);
         }
       } catch (error) {
         if (controller.signal.aborted) return;
@@ -108,7 +109,7 @@ export function ResultsPage({ navigate, user, logout, result }: ResultsPageProps
           error instanceof Error
             ? error.message
             : 'Unable to reach the Newsight assistant.';
-        setExplanationError(message);
+        setAnalysisError(message);
         if (!handleAuthRedirect(message)) {
           toast.error(message);
         }
@@ -240,26 +241,11 @@ export function ResultsPage({ navigate, user, logout, result }: ResultsPageProps
               </CardContent>
             </Card>
 
-            <Card className="border-none shadow-sm bg-[#FAFAFA]">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <MessageCircle className="h-5 w-5 text-[#4BA3A4]" />
-                  <h2 className="text-xl font-semibold">ChatGPT explanation</h2>
-                </div>
-                {isExplanationLoading ? (
-                  <p className="text-sm text-[#6b6b6b]">Generating briefing...</p>
-                ) : explanationError ? (
-                  <div className="flex items-center gap-2 text-sm text-[#B42318]">
-                    <AlertTriangle className="h-4 w-4" />
-                    {explanationError}
-                  </div>
-                ) : (
-                  <p className="text-sm text-[#1F1F1F] leading-relaxed">
-                    {explanation ?? 'Assistant summary unavailable.'}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <ExplanationCard
+              analysis={analysis}
+              error={analysisError}
+              loading={isExplanationLoading}
+            />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">

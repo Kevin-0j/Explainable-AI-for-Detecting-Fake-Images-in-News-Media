@@ -1,0 +1,719 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Result overlays based on history > renders Grad-CAM and LIME cards when URLs are available 1`] = `
+<div>
+  <div
+    class="min-h-screen"
+  >
+    <header
+      class="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60"
+    >
+      <div
+        class="container flex h-16 items-center justify-between"
+      >
+        <a
+          class="flex items-center space-x-2"
+          data-discover="true"
+          href="/"
+        >
+          <div
+            class="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1F1F1F] text-[#FAFAFA]"
+          >
+            <svg
+              class="lucide lucide-shield h-5 w-5"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+              />
+            </svg>
+          </div>
+          <span
+            class="text-xl font-semibold tracking-tight"
+          >
+            Newsight
+          </span>
+        </a>
+        <nav
+          class="flex items-center space-x-4"
+        >
+          <a
+            data-discover="true"
+            href="/dashboard"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3"
+              data-slot="button"
+            >
+              Dashboard
+            </button>
+          </a>
+          <a
+            data-discover="true"
+            href="/verify"
+          >
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-9 px-4 py-2 has-[>svg]:px-3 bg-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1F1F1F]/90"
+              data-slot="button"
+            >
+              Verify Image
+            </button>
+          </a>
+          <button
+            aria-expanded="false"
+            aria-haspopup="menu"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 size-9 rounded-md"
+            data-slot="dropdown-menu-trigger"
+            data-state="closed"
+            id="radix-:r0:"
+            type="button"
+          >
+            <svg
+              class="lucide lucide-user h-5 w-5"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+              />
+              <circle
+                cx="12"
+                cy="7"
+                r="4"
+              />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+    <main
+      class="container py-8 max-w-6xl"
+    >
+      <a
+        data-discover="true"
+        href="/dashboard"
+      >
+        <button
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 mb-6"
+          data-slot="button"
+        >
+          <svg
+            class="lucide lucide-arrow-left mr-2 h-4 w-4"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m12 19-7-7 7-7"
+            />
+            <path
+              d="M19 12H5"
+            />
+          </svg>
+          Back to Dashboard
+        </button>
+      </a>
+      <div
+        class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border mb-8"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 pt-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <div
+            class="flex items-center justify-between"
+          >
+            <div
+              class="flex items-center gap-4"
+            >
+              <div
+                class="text-destructive"
+              >
+                <svg
+                  class="lucide lucide-circle-x h-8 w-8"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                  />
+                  <path
+                    d="m15 9-6 6"
+                  />
+                  <path
+                    d="m9 9 6 6"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4
+                  class="text-3xl mb-2"
+                  data-slot="card-title"
+                >
+                  Verification Results
+                </h4>
+                <span
+                  class="inline-flex items-center justify-center rounded-md border font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden border-transparent [a&]:hover:bg-primary/90 bg-destructive text-destructive-foreground text-lg px-4 py-1"
+                  data-slot="badge"
+                >
+                  FAKE
+                </span>
+              </div>
+            </div>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+              data-slot="button"
+            >
+              <svg
+                class="lucide lucide-download mr-2 h-4 w-4"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                />
+                <polyline
+                  points="7 10 12 15 17 10"
+                />
+                <line
+                  x1="12"
+                  x2="12"
+                  y1="15"
+                  y2="3"
+                />
+              </svg>
+              Download PDF
+            </button>
+          </div>
+        </div>
+        <div
+          class="px-6 [&:last-child]:pb-6"
+          data-slot="card-content"
+        >
+          <div
+            class="grid md:grid-cols-2 gap-6"
+          >
+            <div>
+              <h3
+                class="font-semibold mb-2"
+              >
+                Analysis Summary
+              </h3>
+              <p
+                class="text-muted-foreground mb-4"
+              >
+                This image shows signs of manipulation or tampering.
+              </p>
+              <div
+                class="space-y-2"
+              >
+                <div
+                  class="flex justify-between"
+                >
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    Confidence:
+                  </span>
+                  <span
+                    class="font-semibold"
+                  >
+                    95
+                    %
+                  </span>
+                </div>
+                <div
+                  class="flex justify-between"
+                >
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    Model Version:
+                  </span>
+                  <span
+                    class="font-semibold"
+                  >
+                    N/A
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3
+                class="font-semibold mb-2"
+              >
+                Image Metadata
+              </h3>
+              <div
+                class="space-y-2 text-sm"
+              >
+                <div
+                  class="flex justify-between"
+                >
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    Filename:
+                  </span>
+                  <span>
+                    N/A
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border mb-8"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 pt-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h4
+            class="leading-none"
+            data-slot="card-title"
+          >
+            Visual Analysis
+          </h4>
+          <p
+            class="text-muted-foreground"
+            data-slot="card-description"
+          >
+            Explore different visualization techniques to understand what the AI detected
+          </p>
+        </div>
+        <div
+          class="px-6 [&:last-child]:pb-6"
+          data-slot="card-content"
+        >
+          <div
+            class="flex flex-col gap-2 w-full"
+            data-orientation="horizontal"
+            data-slot="tabs"
+            dir="ltr"
+          >
+            <div
+              aria-orientation="horizontal"
+              class="bg-muted text-muted-foreground h-9 items-center justify-center rounded-xl p-[3px] grid w-full grid-cols-3"
+              data-orientation="horizontal"
+              data-slot="tabs-list"
+              role="tablist"
+              style="outline: none;"
+              tabindex="0"
+            >
+              <button
+                aria-controls="radix-:r2:-content-original"
+                aria-selected="true"
+                class="data-[state=active]:bg-card dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                data-orientation="horizontal"
+                data-radix-collection-item=""
+                data-slot="tabs-trigger"
+                data-state="active"
+                id="radix-:r2:-trigger-original"
+                role="tab"
+                tabindex="-1"
+                type="button"
+              >
+                Original
+              </button>
+              <button
+                aria-controls="radix-:r2:-content-gradcam"
+                aria-selected="false"
+                class="data-[state=active]:bg-card dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                data-orientation="horizontal"
+                data-radix-collection-item=""
+                data-slot="tabs-trigger"
+                data-state="inactive"
+                id="radix-:r2:-trigger-gradcam"
+                role="tab"
+                tabindex="-1"
+                type="button"
+              >
+                Grad-CAM
+              </button>
+              <button
+                aria-controls="radix-:r2:-content-lime"
+                aria-selected="false"
+                class="data-[state=active]:bg-card dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                data-orientation="horizontal"
+                data-radix-collection-item=""
+                data-slot="tabs-trigger"
+                data-state="inactive"
+                id="radix-:r2:-trigger-lime"
+                role="tab"
+                tabindex="-1"
+                type="button"
+              >
+                LIME (Coming soon)
+              </button>
+            </div>
+            <div
+              aria-labelledby="radix-:r2:-trigger-original"
+              class="flex-1 outline-none mt-4"
+              data-orientation="horizontal"
+              data-slot="tabs-content"
+              data-state="active"
+              id="radix-:r2:-content-original"
+              role="tabpanel"
+              style="animation-duration: 0s;"
+              tabindex="0"
+            >
+              <img
+                alt="Original"
+                class="w-full rounded-lg max-h-[480px] object-contain bg-black/5"
+                src="/uploads/input.png"
+              />
+            </div>
+            <div
+              aria-labelledby="radix-:r2:-trigger-gradcam"
+              class="flex-1 outline-none mt-4"
+              data-orientation="horizontal"
+              data-slot="tabs-content"
+              data-state="inactive"
+              hidden=""
+              id="radix-:r2:-content-gradcam"
+              role="tabpanel"
+              tabindex="0"
+            />
+            <div
+              aria-labelledby="radix-:r2:-trigger-lime"
+              class="flex-1 outline-none mt-4"
+              data-orientation="horizontal"
+              data-slot="tabs-content"
+              data-state="inactive"
+              hidden=""
+              id="radix-:r2:-content-lime"
+              role="tabpanel"
+              tabindex="0"
+            />
+          </div>
+        </div>
+      </div>
+      <div
+        class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border"
+        data-slot="card"
+      >
+        <div
+          class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 pt-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"
+          data-slot="card-header"
+        >
+          <h4
+            class="leading-none"
+            data-slot="card-title"
+          >
+            Credibility Checklist
+          </h4>
+          <p
+            class="text-muted-foreground"
+            data-slot="card-description"
+          >
+            Key factors analyzed by our AI system
+          </p>
+        </div>
+        <div
+          class="px-6 [&:last-child]:pb-6"
+          data-slot="card-content"
+        >
+          <div
+            class="grid md:grid-cols-2 gap-4"
+          >
+            <div
+              class="flex items-start gap-3"
+            >
+              <div
+                class="mt-1 text-destructive"
+              >
+                <svg
+                  class="lucide lucide-x h-5 w-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M18 6 6 18"
+                  />
+                  <path
+                    d="m6 6 12 12"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4
+                  class="font-semibold mb-1"
+                >
+                  Lighting Consistency
+                </h4>
+                <p
+                  class="text-sm text-muted-foreground"
+                >
+                  Analyzed for consistent light sources and shadows
+                </p>
+              </div>
+            </div>
+            <div
+              class="flex items-start gap-3"
+            >
+              <div
+                class="mt-1 text-destructive"
+              >
+                <svg
+                  class="lucide lucide-x h-5 w-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M18 6 6 18"
+                  />
+                  <path
+                    d="m6 6 12 12"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4
+                  class="font-semibold mb-1"
+                >
+                  Compression Artifacts
+                </h4>
+                <p
+                  class="text-sm text-muted-foreground"
+                >
+                  Checked for unusual compression patterns
+                </p>
+              </div>
+            </div>
+            <div
+              class="flex items-start gap-3"
+            >
+              <div
+                class="mt-1 text-destructive"
+              >
+                <svg
+                  class="lucide lucide-x h-5 w-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M18 6 6 18"
+                  />
+                  <path
+                    d="m6 6 12 12"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4
+                  class="font-semibold mb-1"
+                >
+                  Texture Analysis
+                </h4>
+                <p
+                  class="text-sm text-muted-foreground"
+                >
+                  Examined texture consistency across the image
+                </p>
+              </div>
+            </div>
+            <div
+              class="flex items-start gap-3"
+            >
+              <div
+                class="mt-1 text-destructive"
+              >
+                <svg
+                  class="lucide lucide-x h-5 w-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M18 6 6 18"
+                  />
+                  <path
+                    d="m6 6 12 12"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4
+                  class="font-semibold mb-1"
+                >
+                  Background Irregularities
+                </h4>
+                <p
+                  class="text-sm text-muted-foreground"
+                >
+                  Detected anomalies in background elements
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        class="grid gap-6 lg:grid-cols-2 mt-6"
+      >
+        <div
+          class="text-card-foreground flex flex-col gap-6 rounded-xl border border-none shadow-sm bg-[#FAFAFA]"
+          data-slot="card"
+        >
+          <div
+            class="[&:last-child]:pb-6 p-6 space-y-4"
+            data-slot="card-content"
+          >
+            <div
+              class="flex items-center gap-3"
+            >
+              <svg
+                class="lucide lucide-sparkles h-5 w-5 text-[#4BA3A4]"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"
+                />
+                <path
+                  d="M20 3v4"
+                />
+                <path
+                  d="M22 5h-4"
+                />
+                <path
+                  d="M4 17v2"
+                />
+                <path
+                  d="M5 18H3"
+                />
+              </svg>
+              <h2
+                class="text-xl font-semibold"
+              >
+                Grad-CAM overlay
+              </h2>
+            </div>
+            <img
+              alt="Grad-CAM visualization"
+              class="rounded-xl border border-[#e1e1e1]"
+              src="/uploads/gradcam/fake_gradcam.png"
+            />
+          </div>
+        </div>
+        <div
+          class="text-card-foreground flex flex-col gap-6 rounded-xl border border-none shadow-sm bg-[#FAFAFA]"
+          data-slot="card"
+        >
+          <div
+            class="[&:last-child]:pb-6 p-6 space-y-4"
+            data-slot="card-content"
+          >
+            <div
+              class="flex items-center gap-3"
+            >
+              <svg
+                class="lucide lucide-shield h-5 w-5 text-[#4BA3A4]"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+                />
+              </svg>
+              <h2
+                class="text-xl font-semibold"
+              >
+                LIME explanation
+              </h2>
+            </div>
+            <img
+              alt="LIME explanation overlay"
+              class="rounded-xl border border-[#e1e1e1]"
+              src="/uploads/lime/fake_lime.png"
+            />
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+`;

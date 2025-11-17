@@ -1,0 +1,174 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ExplanationCard > renders structured sections and matches snapshot 1`] = `
+<div>
+  <div
+    class="text-card-foreground flex flex-col gap-6 rounded-xl border border-none shadow-sm bg-[#FAFAFA]"
+    data-slot="card"
+  >
+    <div
+      class="[&:last-child]:pb-6 p-6 space-y-4"
+      data-slot="card-content"
+    >
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div
+          class="space-y-1"
+        >
+          <div
+            class="flex flex-wrap items-center gap-2"
+          >
+            <svg
+              class="lucide lucide-message-circle h-5 w-5 text-[#4BA3A4]"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"
+              />
+            </svg>
+            <h2
+              class="text-xl font-semibold"
+            >
+              Newsight explanation
+            </h2>
+            <span
+              class="inline-flex items-center justify-center rounded-md border font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden border-transparent [a&]:hover:bg-primary/90 px-3 py-1 text-sm bg-destructive text-destructive-foreground"
+              data-slot="badge"
+            >
+              High risk
+            </span>
+          </div>
+          <p
+            class="text-sm text-[#6b6b6b]"
+          >
+            Concise, structured guidance from the assistant tailored to this prediction.
+          </p>
+        </div>
+        <button
+          class="justify-center whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-8 rounded-md px-3 has-[>svg]:px-2.5 flex items-center gap-2"
+          data-slot="button"
+        >
+          <svg
+            class="lucide lucide-copy h-4 w-4"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              height="14"
+              rx="2"
+              ry="2"
+              width="14"
+              x="8"
+              y="8"
+            />
+            <path
+              d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+            />
+          </svg>
+          Copy verification summary
+        </button>
+      </div>
+      <div
+        class="space-y-6"
+      >
+        <section>
+          <h3
+            class="text-sm font-semibold text-[#1F1F1F] mb-2"
+          >
+            TL;DR
+          </h3>
+          <p
+            class="text-sm text-[#1F1F1F] leading-relaxed"
+          >
+            This image contains signs of manipulation.
+          </p>
+        </section>
+        <section>
+          <h3
+            class="text-sm font-semibold text-[#1F1F1F] mb-2"
+          >
+            Key suspicious cues
+          </h3>
+          <ul
+            class="list-disc pl-5 space-y-2 text-sm text-[#1F1F1F]"
+          >
+            <li>
+              Lighting inconsistencies on subject
+            </li>
+            <li>
+              Edge artefacts around the face
+            </li>
+            <li>
+              Unnatural texture compression
+            </li>
+          </ul>
+        </section>
+        <section>
+          <h3
+            class="text-sm font-semibold text-[#1F1F1F] mb-2"
+          >
+            Recommended next steps
+          </h3>
+          <ul
+            class="list-disc pl-5 space-y-2 text-sm text-[#1F1F1F]"
+          >
+            <li>
+              Run reverse image search
+            </li>
+            <li>
+              Compare with wire agency photos
+            </li>
+            <li>
+              Request original source metadata
+            </li>
+          </ul>
+        </section>
+        <section>
+          <h3
+            class="text-sm font-semibold text-[#1F1F1F] mb-2"
+          >
+            Caveats
+          </h3>
+          <ul
+            class="list-disc pl-5 space-y-2 text-sm text-[#1F1F1F]"
+          >
+            <li>
+              Model may be wrong if input is compressed
+            </li>
+          </ul>
+        </section>
+        <details
+          class="rounded-lg border border-dashed border-[#d1d1d1] bg-[#F9F9F9] p-4 text-sm text-[#1F1F1F]"
+        >
+          <summary
+            class="font-semibold cursor-pointer"
+          >
+            Full explanation
+          </summary>
+          <p
+            class="mt-3 leading-relaxed whitespace-pre-line"
+          >
+            Detailed explanation here describing the suspect edits.
+          </p>
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+`;
