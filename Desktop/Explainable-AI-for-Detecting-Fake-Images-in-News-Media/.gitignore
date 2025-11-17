@@ -2,3 +2,6 @@
 backend/.env
 *.sqlite3
 local.db
+*.pth
+venv310/
+
