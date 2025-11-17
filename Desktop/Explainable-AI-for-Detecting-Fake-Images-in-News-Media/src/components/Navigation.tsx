@@ -15,6 +15,7 @@ import {
   Shield,
   LogOut,
   User,
+  Wrench,
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -29,6 +30,7 @@ export function Navigation({ navigate, currentPage, user, logout }: NavigationPr
     { id: 'dashboard', label: 'Overview', icon: Home },
     { id: 'upload', label: 'New Analysis', icon: Upload },
     { id: 'history', label: 'History', icon: History },
+    { id: 'journalist-tools', label: 'Tools', icon: Wrench },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
   const initials = user?.name

@@ -179,6 +179,8 @@ class AnalysisResult(db.Model):
     confidence_score = db.Column(db.Float, nullable=False)
     processing_time_ms = db.Column(db.Integer, nullable=True)
     analysis_metadata = db.Column(db.JSON, nullable=True)
+    gradcam_image_url = db.Column(db.String(512), nullable=True)
+    lime_image_url = db.Column(db.String(512), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     user = db.relationship("User", back_populates="analysis_results")
@@ -193,10 +195,12 @@ class AnalysisResult(db.Model):
             "model_id": self.model_id,
             "prediction_label": self.prediction_label,
             "confidence_score": round(self.confidence_score, 4),
-            "processing_time_ms": self.processing_time_ms,
-            "metadata": self.analysis_metadata or {},
-            "created_at": self.created_at.isoformat(),
-        }
+        "processing_time_ms": self.processing_time_ms,
+        "metadata": self.analysis_metadata or {},
+        "gradcam_image_url": self.gradcam_image_url,
+        "lime_image_url": self.lime_image_url,
+        "created_at": self.created_at.isoformat(),
+    }
 
 
 class SystemLog(db.Model):

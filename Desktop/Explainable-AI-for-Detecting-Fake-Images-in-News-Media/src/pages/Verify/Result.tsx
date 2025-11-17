@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from '@/components/layout/Header';
 import { reportsApi } from '@/api/reports';
-import { CheckCircle2, XCircle, HelpCircle, Download, ArrowLeft, Check, X } from 'lucide-react';
+import { CheckCircle2, XCircle, HelpCircle, Download, ArrowLeft, Check, X, Sparkles, Shield } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -13,6 +13,8 @@ import { predictionApi, type PredictionResponse } from '@/api/api';
 import { useMemo } from 'react';
 import { buildMediaUrl } from '@/lib/media';
 import { useAuthStore } from '@/store/auth';
+import { AnalysisOutput } from '@/components/AnalysisOutput';
+import type { StructuredAnalysis } from '@/types/analysis';
 
 const Result = () => {
   const { id } = useParams<{ id: string }>();
@@ -84,6 +86,9 @@ const Result = () => {
 
   const analysis = prediction.analysis;
   const metadata = (analysis?.analysis_metadata as Record<string, unknown>) || {};
+  const verification = (prediction as PredictionResponse & {
+    verification?: { gradcam_image_url?: string | null } | null;
+  })?.verification;
   const imageUrl = buildMediaUrl(
     prediction.media_file?.cdn_url ||
       prediction.media_file?.public_url ||
@@ -94,9 +99,33 @@ const Result = () => {
       ''
   );
   const confidence = analysis?.confidence_score ?? 0;
-  const gradcamHeatmap = buildMediaUrl(
-    prediction.gradcam_heatmap || prediction.heatmap_overlay || ''
-  );
+  const gradcamOverlaySource =
+    analysis?.gradcam_image_url ??
+    verification?.gradcam_image_url ??
+    prediction.gradcam_heatmap ??
+    prediction.heatmap_overlay ??
+    '';
+  const gradcamHeatmap = gradcamOverlaySource ? buildMediaUrl(gradcamOverlaySource) : '';
+  const limeImageUrl = buildMediaUrl(analysis?.lime_image_url ?? '');
+  const structuredAnalysis: StructuredAnalysis = {
+    tldr:
+      (metadata.analysis_title as string) ||
+      (metadata.summary as string) ||
+      (metadata.tldr as string) ||
+      '',
+    key_findings: (metadata.key_findings as string[]) ?? (metadata.findings as string[]),
+    risk_level:
+      (metadata.risk_level as string) ??
+      (analysis?.prediction_label ? analysis.prediction_label.toLowerCase() : undefined),
+    risk_explanation: metadata.risk_explanation as string,
+    action_steps: (metadata.action_steps as string[]) ?? (metadata.next_steps as string[]),
+    model_name: analysis?.model?.name,
+    model_version: analysis?.model?.version,
+    raw_text:
+      (metadata.raw_text as string) ??
+      (metadata.analysis_text as string) ??
+      (metadata.full_text as string),
+  };
 
   const getPredictionDisplay = () => {
     switch (analysis?.prediction_label) {
@@ -194,6 +223,9 @@ const Result = () => {
           </CardContent>
         </Card>
 
+        <div className="mb-8">
+          <AnalysisOutput analysis={structuredAnalysis} />
+        </div>
         {/* Image Viewer with Tabs */}
         <Card className="mb-8">
           <CardHeader>
@@ -250,7 +282,7 @@ const Result = () => {
         </Card>
 
         {/* Credibility Checklist */}
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle>Credibility Checklist</CardTitle>
             <CardDescription>
@@ -338,6 +370,48 @@ const Result = () => {
             </div>
           </CardContent>
         </Card>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="border-none shadow-sm bg-[#FAFAFA]">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <Sparkles className="h-5 w-5 text-[#4BA3A4]" />
+                <h2 className="text-xl font-semibold">Grad-CAM overlay</h2>
+              </div>
+              {gradcamHeatmap ? (
+                <img
+                  src={gradcamHeatmap}
+                  alt="Grad-CAM visualization"
+                  className="w-full max-h-[480px] object-contain rounded-lg border border-[#e1e1e1]"
+                />
+              ) : (
+                <div className="h-64 rounded-xl border border-dashed border-[#d1e1d1] flex items-center justify-center text-sm text-[#777777]">
+                  Grad-CAM visualization unavailable for this record.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-[#FAFAFA]">
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <Shield className="h-5 w-5 text-[#4BA3A4]" />
+                <h2 className="text-xl font-semibold">LIME explanation</h2>
+              </div>
+              {limeImageUrl ? (
+                <img
+                  src={limeImageUrl}
+                  alt="LIME explanation overlay"
+                  className="w-full max-h-[480px] object-contain rounded-lg border border-[#e1e1e1]"
+                />
+              ) : (
+                <div className="h-64 rounded-xl border border-dashed border-[#d1e1d1] flex items-center justify-center text-sm text-[#777777]">
+                  LIME explanation unavailable for this record.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </div>
   );

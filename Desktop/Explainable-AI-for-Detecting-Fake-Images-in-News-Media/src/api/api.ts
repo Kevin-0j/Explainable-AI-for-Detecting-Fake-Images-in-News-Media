@@ -27,6 +27,8 @@ export interface AnalysisRecord {
   analysis_metadata?: Record<string, unknown>;
   created_at: string;
   updated_at?: string;
+  gradcam_image_url?: string | null;
+  lime_image_url?: string | null;
 }
 
 export interface PredictionHistoryItem {

@@ -140,5 +140,7 @@ const normalizePredictionToVerification = (item: PredictionHistoryItem): Verific
     metadata,
     created_at: fallbackTimestamp,
     updated_at: item.analysis?.updated_at || fallbackTimestamp,
+    gradcam_image_url: item.analysis?.gradcam_image_url ?? null,
+    lime_image_url: item.analysis?.lime_image_url ?? null,
   };
 };

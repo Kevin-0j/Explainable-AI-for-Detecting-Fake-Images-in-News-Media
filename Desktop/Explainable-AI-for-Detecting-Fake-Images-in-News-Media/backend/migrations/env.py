@@ -1,3 +1,4 @@
+import os
 import logging
 from logging.config import fileConfig
 
@@ -32,11 +33,14 @@ def get_engine_url():
         return str(get_engine().url).replace('%', '%%')
 
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-config.set_main_option('sqlalchemy.url', get_engine_url())
+from backend.extensions import db
+from backend import models  # noqa: F401
+
+config.set_main_option(
+    "sqlalchemy.url",
+    os.getenv("DATABASE_URL"),
+)
+target_metadata = db.Model.metadata
 target_db = current_app.extensions['migrate'].db
 
 # other values from the config, defined by the needs of env.py,

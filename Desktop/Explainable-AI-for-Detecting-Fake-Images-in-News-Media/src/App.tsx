@@ -6,6 +6,8 @@ import { UploadPage } from './components/UploadPage';
 import { ResultsPage } from './components/ResultsPage';
 import { HistoryPage } from './components/HistoryPage';
 import { SettingsPage } from './components/SettingsPage';
+import JournalistToolsPage from './pages/JournalistToolsPage';
+import { Navigation } from './components/Navigation';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminUserManagement } from './components/admin/AdminUserManagement';
 import { AdminFileManagement } from './components/admin/AdminFileManagement';
@@ -13,6 +15,8 @@ import { AdminLogsViewer } from './components/admin/AdminLogsViewer';
 import { AdminAnalytics } from './components/admin/AdminAnalytics';
 import { AdminSystemSettings } from './components/admin/AdminSystemSettings';
 import { AdminAuthPage } from './components/admin/AdminAuthPage';
+import { useToolsContext } from './state/useToolsContext';
+import { BrowserRouter } from 'react-router-dom';
 import { api, USE_MOCK_API } from './services/api';
 import { MockApiService } from './services/mockApi';
 import { toast } from 'sonner';
@@ -89,6 +93,7 @@ export default function App() {
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const mockApi = useMemo(() => (USE_MOCK_API ? new MockApiService() : null), []);
+  const { imageUrl, analysis, metadata } = useToolsContext();
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -460,6 +465,15 @@ export default function App() {
             onViewResult={handleViewResult}
           />
         );
+      case 'journalist-tools':
+        return (
+          <div className="flex h-screen bg-[#E5E5E5]">
+            <Navigation navigate={navigate} currentPage="journalist-tools" user={user} logout={logout} />
+            <div className="flex-1 overflow-auto">
+              <JournalistToolsPage />
+            </div>
+          </div>
+        );
       case 'settings':
         return (
           <SettingsPage 
@@ -544,8 +558,34 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {renderPage()}
-    </div>
+    <BrowserRouter>
+      <div className="min-h-screen bg-background">
+        {renderPage()}
+        <button
+          onClick={() => {
+            useToolsContext.getState().setContext({
+              imageUrl: imageUrl || '',
+              analysis: analysis || {},
+              metadata: metadata || {},
+            });
+            window.location.href = '/journalist-tools';
+          }}
+          className="
+            fixed bottom-6 right-6
+            z-[9999]
+            px-6 py-3
+            rounded-full
+            bg-[#4BA3A4]
+            text-white
+            shadow-xl
+            font-semibold
+            hover:bg-[#3b8284]
+            transition
+          "
+        >
+          🧰 Use in Tools
+        </button>
+      </div>
+    </BrowserRouter>
   );
 }

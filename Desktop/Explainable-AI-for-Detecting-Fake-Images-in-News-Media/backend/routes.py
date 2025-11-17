@@ -1,12 +1,13 @@
 
 import base64
 import hashlib
+import json
 import os
 import tempfile
 from datetime import datetime
 from io import BytesIO
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
-from typing import Optional, Tuple
 
 import cv2
 import imageio
@@ -17,7 +18,7 @@ import torch.nn.functional as F
 import torchvision.models as models
 import torchvision.transforms as transforms
 from PIL import Image
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, Response, jsonify, request, send_file
 from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 from werkzeug.utils import secure_filename
 from reportlab.lib import colors
@@ -126,6 +127,36 @@ transform = transforms.Compose([
         std=[0.229, 0.224, 0.225]
     )
 ])
+
+
+def _try_save_overlay(base64_str: str, folder: str, identifier: str) -> Optional[str]:
+    """Persist a base64 overlay image under uploads/<folder>."""
+    if not base64_str:
+        return None
+
+    payload = base64_str
+    if "," in payload:
+        payload = payload.split(",", 1)[1]
+
+    try:
+        image_data = base64.b64decode(payload)
+    except Exception as exc:
+        print(f"[OVERLAY] Failed to decode {folder} base64: {exc}")
+        return None
+
+    directory = os.path.join("uploads", folder)
+    os.makedirs(directory, exist_ok=True)
+    filename = f"{folder}-{identifier}-{uuid4().hex}.png"
+    path = os.path.join(directory, filename)
+
+    try:
+        with open(path, "wb") as f:
+            f.write(image_data)
+    except Exception as exc:
+        print(f"[OVERLAY] Failed to save {folder} overlay at {path}: {exc}")
+        return None
+
+    return path.replace(os.sep, "/")
 
 def allowed_file(filename: str) -> bool:
     """Check if file extension is allowed."""
@@ -1037,6 +1068,12 @@ def predict():
             created_at=datetime.utcnow(),
         )
         db.session.add(analysis)
+        db.session.flush()
+
+        if representative_heatmap and not analysis.gradcam_image_url:
+            gradcam_path = _try_save_overlay(representative_heatmap, "gradcam", str(analysis.id))
+            if gradcam_path:
+                analysis.gradcam_image_url = gradcam_path
 
         log_action(
             user_id=user_id,
@@ -1876,7 +1913,10 @@ def get_system_logs():
 # Explainability & Assistant Endpoints
 # ============================================================================
 
-def _get_authenticated_user():
+VALID_RISK_LEVELS = {"low", "medium", "high"}
+
+
+def _get_authenticated_user() -> Tuple[Optional[User], Optional[Tuple[Response, int]]]:
     """Return (user, response) tuple to reuse across endpoints."""
     user_id_str = get_jwt_identity()
     user_id = int(user_id_str) if user_id_str else None
@@ -1888,15 +1928,151 @@ def _get_authenticated_user():
     return user, None
 
 
+def _extract_tldr(raw_text: str, sentence_limit: int = 2) -> str:
+    """Build a concise TLDR by taking up to `sentence_limit` sentences."""
+    normalized = " ".join(raw_text.replace("\n", " ").split())
+    if not normalized:
+        return ""
+    sentences = [sentence.strip() for sentence in normalized.split(".") if sentence.strip()]
+    if not sentences:
+        return normalized
+    summary = ". ".join(sentences[:sentence_limit]).strip()
+    if not summary.endswith("."):
+        summary = f"{summary}."
+    return summary
+
+
+def _ensure_str(value: Any, default: str = "") -> str:
+    """Coerce an arbitrary value to string, falling back to the provided default."""
+    if value is None:
+        return default
+    try:
+        converted = str(value).strip()
+        return converted if converted else default
+    except Exception:
+        return default
+
+
+def _ensure_str_list(value: Any) -> List[str]:
+    """Normalize list-like values into a list of strings."""
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if item is not None and str(item).strip()]
+    if isinstance(value, tuple):
+        return [str(item).strip() for item in value if item is not None and str(item).strip()]
+    if isinstance(value, str):
+        normalized = value.strip()
+        return [normalized] if normalized else []
+    return []
+
+
+def _build_default_analysis(raw_text: str, tldr_override: Optional[str] = None) -> Dict[str, Any]:
+    """Return a fallback analysis structure when parsing fails or content is missing."""
+    normalized_text = raw_text or ""
+    fallback_tldr = tldr_override or _extract_tldr(normalized_text) or (
+        "The assistant summary is unavailable. Please interpret the model decision manually."
+    )
+    return {
+        "risk_level": "medium",
+        "tldr": fallback_tldr,
+        "key_cues": [
+            "Assistant unavailable; manually verify the prediction.",
+        ],
+        "next_steps": [
+            "Review source metadata and run manual checks.",
+        ],
+        "caveats": [
+            "Fallback explanation used because the AI assistant could not respond.",
+        ],
+        "raw_text": normalized_text,
+    }
+
+
+def _extract_json_payload(raw_text: str) -> Optional[str]:
+    """Try to isolate the core JSON object if extra text surrounds it."""
+    if not raw_text:
+        return None
+    trimmed = raw_text.strip()
+    first = trimmed.find("{")
+    last = trimmed.rfind("}")
+    if 0 <= first < last:
+        return trimmed[first : last + 1]
+    return None
+
+
+def _parse_assistant_response(raw_content: str, raw_response: Optional[str] = None) -> Dict[str, Any]:
+    """Parse the assistant response into the agreed-upon schema, falling back safely."""
+    fallback = _build_default_analysis(raw_response or raw_content)
+    try:
+        parsed = json.loads(raw_content)
+    except json.JSONDecodeError:
+        return fallback
+
+    if not isinstance(parsed, dict):
+        return fallback
+
+    risk_level = _ensure_str(parsed.get("risk_level"), fallback["risk_level"]).lower()
+    if risk_level not in VALID_RISK_LEVELS:
+        risk_level = fallback["risk_level"]
+
+    raw_text_value = _ensure_str(parsed.get("raw_text"), fallback["raw_text"])
+    final_raw_text = raw_response or raw_text_value or fallback["raw_text"]
+
+    return {
+        "risk_level": risk_level,
+        "tldr": _ensure_str(parsed.get("tldr"), fallback["tldr"]),
+        "key_cues": _ensure_str_list(parsed.get("key_cues")) or fallback["key_cues"],
+        "next_steps": _ensure_str_list(parsed.get("next_steps")) or fallback["next_steps"],
+        "caveats": _ensure_str_list(parsed.get("caveats")) or fallback["caveats"],
+        "raw_text": final_raw_text,
+    }
+
+
+def _request_analysis_from_openai(summary: str, context: str, api_key: str) -> Dict[str, Any]:
+    """Call OpenAI and return a parsed analysis dict that follows the agreed schema."""
+    client = OpenAI(api_key=api_key)
+    # System prompt instructs the assistant to return only the JSON object with the specified keys
+    # and to keep all fields except raw_text concise (targeting ~200–250 words total).
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are an investigative assistant who explains deepfake detection results. "
+                "Only respond with a JSON object containing the keys `risk_level`, `tldr`, "
+                "`key_cues`, `next_steps`, `caveats`, and `raw_text`. Keep the combined content "
+                "for risk_level, tldr, key_cues, next_steps, and caveats under 250 words, "
+                "and stay concise and factual."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"{summary}\n{context}\nProvide a concise explanation, highlight relevant cues, "
+                "list recommended next steps, note any caveats, and repeat the full explanation "
+                "in `raw_text`. Do not include narrative text outside the JSON."
+            ),
+        },
+    ]
+
+    response = client.chat.completions.create(
+        model=DEFAULT_OPENAI_MODEL,
+        temperature=0.35,
+        max_tokens=450,
+        messages=messages,
+    )
+    raw_response = response.choices[0].message.content.strip()
+    json_payload = _extract_json_payload(raw_response) or raw_response
+    return _parse_assistant_response(json_payload, raw_response=raw_response)
+
+
 @api_bp.route("/explain", methods=["POST"])
 @jwt_required()
-def explain_prediction():
+def explain_prediction() -> Tuple[Response, int]:
     """Call OpenAI to generate a journalist-friendly explanation."""
     user, error_response = _get_authenticated_user()
     if error_response:
         return error_response
 
-    payload = request.get_json() or {}
+    payload: Dict[str, Any] = request.get_json() or {}
     prediction_label = (payload.get("prediction") or payload.get("prediction_label") or "").upper()
     confidence = payload.get("confidence")
     file_name = payload.get("file_name") or payload.get("filename") or "uploaded media"
@@ -1921,35 +2097,29 @@ def explain_prediction():
             "Set OPENAI_API_KEY to enable AI-assisted explanations. "
             "Provide the prediction summary manually."
         )
-        return jsonify({"explanation": message, "assistant": "unavailable"}), 200
+        return (
+            jsonify(
+                {
+                    "analysis": _build_default_analysis(
+                        message,
+                        tldr_override="Medium risk: assistant unavailable; summarise manually.",
+                    ),
+                    "assistant": "unavailable",
+                }
+            ),
+            200,
+        )
 
     try:
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model=DEFAULT_OPENAI_MODEL,
-            temperature=0.35,
-            max_tokens=450,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an investigative assistant who helps journalists interpret AI "
-                        "deepfake detection results. Explain findings clearly, cite possible "
-                        "next steps, and keep the tone professional."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": f"{summary}\n{context}\nProvide a concise explanation and recommended actions.",
-                },
-            ],
-        )
-        explanation = response.choices[0].message.content.strip()
+        analysis_result = _request_analysis_from_openai(summary, context, api_key)
+        assistant_state = "newsight"
     except Exception as exc:
         print(f"[OPENAI] Explanation failed: {exc}")
-        explanation = (
-            "The Newsight assistant is currently unavailable. Please summarize the model decision manually."
+        fallback_message = "Medium risk: Newsight assistant unavailable; please summarize manually."
+        analysis_result = _build_default_analysis(
+            fallback_message, tldr_override=fallback_message
         )
+        assistant_state = "unavailable"
 
     log_action(
         user_id=user.id,
@@ -1959,7 +2129,7 @@ def explain_prediction():
     )
     db.session.commit()
 
-    return jsonify({"explanation": explanation, "assistant": "newsight"}), 200
+    return jsonify({"analysis": analysis_result, "assistant": assistant_state}), 200
 
 
 @api_bp.route("/explain/lime/<int:analysis_id>", methods=["GET"])
@@ -2000,11 +2170,22 @@ def explain_lime(analysis_id):
             )
             metadata["lime_visualization"] = lime_visualization
             analysis.analysis_metadata = metadata
+            if lime_visualization and not analysis.lime_image_url:
+                lime_path = _try_save_overlay(lime_visualization, "lime", str(analysis.id))
+                if lime_path:
+                    analysis.lime_image_url = lime_path
             db.session.add(analysis)
             db.session.commit()
         except Exception as exc:
             db.session.rollback()
             return jsonify({"error": f"LIME generation failed: {exc}"}), 500
+
+    if lime_visualization and not analysis.lime_image_url:
+        lime_path = _try_save_overlay(lime_visualization, "lime", str(analysis.id))
+        if lime_path:
+            analysis.lime_image_url = lime_path
+            db.session.add(analysis)
+            db.session.commit()
 
     log_action(
         user_id=user.id,
@@ -2014,7 +2195,12 @@ def explain_lime(analysis_id):
     )
     db.session.commit()
 
-    return jsonify({"lime_visualization": lime_visualization}), 200
+    return jsonify(
+        {
+            "lime_visualization": lime_visualization,
+            "lime_image_url": analysis.lime_image_url,
+        }
+    ), 200
 
 # ============================================================================
 # Report Generation Endpoint
