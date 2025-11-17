@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-size-base: 16px;
+    --color-background: #f5f6f7;
+    --color-foreground: #101317;
+    --color-border: rgba(15, 17, 23, 0.08);
+    --color-panel: #ffffff;
+    --color-panel-dark: #14171c;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Inter", system-ui, "Segoe UI", sans-serif;
+    font-size: var(--font-size-base);
+    background: var(--color-background);
+    color: var(--color-foreground);
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
+    line-height: 1.3;
+  }
+
+  p {
+    margin: 0;
+  }
+}
