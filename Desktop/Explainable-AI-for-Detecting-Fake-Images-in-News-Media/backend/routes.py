@@ -55,10 +55,81 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEFAULT_MODEL_NAME = "ResNet18-Combined"
 DEFAULT_MODEL_VERSION = "1.0.0"
 DEFAULT_OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+MODEL_DIR = os.path.dirname(MODEL_PATH)
+MODEL_EXTENSIONS = (".pth", ".pt")
+AVAILABLE_MODELS: Dict[str, str] = {}
+ACTIVE_MODEL_NAME = os.path.splitext(os.path.basename(MODEL_PATH))[0]
+active_model: Optional[torch.nn.Module] = None
 
 # Video processing settings
 FRAMES_PER_SECOND = 1  # Extract 1 frame per second
 MAX_FRAMES = 30  # Maximum frames to process per video
+
+
+def _refresh_available_models() -> None:
+    """Scan the model directory and populate the available models registry."""
+    global AVAILABLE_MODELS
+    models_found: Dict[str, str] = {}
+    if os.path.isdir(MODEL_DIR):
+        for filename in sorted(os.listdir(MODEL_DIR)):
+            base, ext = os.path.splitext(filename)
+            if ext.lower() in MODEL_EXTENSIONS:
+                models_found[base] = os.path.join(MODEL_DIR, filename)
+    AVAILABLE_MODELS = models_found
+
+
+def _build_model_from_path(path: str) -> torch.nn.Module:
+    checkpoint = torch.load(path, map_location=DEVICE)
+
+    if isinstance(checkpoint, dict):
+        if "model_state_dict" in checkpoint:
+            state_dict = checkpoint["model_state_dict"]
+        elif "state_dict" in checkpoint:
+            state_dict = checkpoint["state_dict"]
+        else:
+            state_dict = checkpoint
+    else:
+        state_dict = checkpoint
+
+    cleaned_state_dict: Dict[str, Any] = {}
+    for key, value in state_dict.items():
+        new_key = key
+        if new_key.startswith("module."):
+            new_key = new_key[len("module.") :]
+        cleaned_state_dict[new_key] = value
+
+    instance = models.resnet18(weights=None)
+    instance.fc = torch.nn.Linear(512, 2)
+    instance.load_state_dict(cleaned_state_dict, strict=False)
+    instance.to(DEVICE)
+    instance.eval()
+    return instance
+
+
+def get_active_model() -> torch.nn.Module:
+    """Return the currently active model."""
+    if active_model is None:
+        raise RuntimeError("No active model has been loaded")
+    return active_model
+
+
+def load_model_by_name(name: str) -> torch.nn.Module:
+    """
+    Load the requested model from disk and set it as the active model.
+    Raises FileNotFoundError if the requested model is not registered.
+    """
+    global active_model, ACTIVE_MODEL_NAME, model
+    _refresh_available_models()
+    normalized_name = name.strip()
+    if normalized_name not in AVAILABLE_MODELS:
+        raise FileNotFoundError(f"Model '{name}' not found")
+
+    new_model_path = AVAILABLE_MODELS[normalized_name]
+    new_model = _build_model_from_path(new_model_path)
+    active_model = new_model
+    model = new_model
+    ACTIVE_MODEL_NAME = normalized_name
+    return active_model
 
 # Load model at startup
 model = None
@@ -88,6 +159,38 @@ try:
     print(f"[OK] Model loaded successfully: {MODEL_PATH}")
 except Exception as e:
     print(f"[ERROR] Failed to load model: {e}")
+
+if model is not None:
+    active_model = model
+_refresh_available_models()
+print("[MODELS] Available:", AVAILABLE_MODELS)
+print("[MODELS] Active:", ACTIVE_MODEL_NAME)
+
+
+@api_bp.route("/models", methods=["GET"])
+def list_models():
+    """Return the available model registry."""
+    _refresh_available_models()
+    return jsonify({"models": sorted(AVAILABLE_MODELS.keys())}), 200
+
+
+@api_bp.route("/models/select", methods=["POST"])
+@jwt_required()
+def select_model():
+    """Select a different model to use for inference."""
+    data = request.get_json(silent=True) or {}
+    name = data.get("name")
+    if not name:
+        return jsonify({"error": "Model name is required"}), 400
+
+    try:
+        load_model_by_name(name)
+    except FileNotFoundError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Failed to load model: {exc}"}), 400
+
+    return jsonify({"active_model": ACTIVE_MODEL_NAME}), 200
 
 # Face detection initialization using OpenCV DNN
 face_detector = None
@@ -671,6 +774,7 @@ def get_or_create_detection_model():
         db.session.add(model_record)
         db.session.flush()
     return model_record
+
 
 # ============================================================================
 # Authentication Endpoints

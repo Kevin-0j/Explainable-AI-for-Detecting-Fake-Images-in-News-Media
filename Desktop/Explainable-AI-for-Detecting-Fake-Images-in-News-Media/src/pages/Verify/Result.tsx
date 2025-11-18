@@ -1,5 +1,5 @@
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,17 +10,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { predictionApi, type PredictionResponse } from '@/api/api';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { buildMediaUrl } from '@/lib/media';
 import { useAuthStore } from '@/store/auth';
 import { AnalysisOutput } from '@/components/AnalysisOutput';
 import type { StructuredAnalysis } from '@/types/analysis';
+import { useActiveResult } from '@/state/useActiveResult';
 
 const Result = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const statePrediction = (location.state as { prediction?: PredictionResponse } | null)?.prediction;
   const accessToken = useAuthStore((state) => state.accessToken);
+  const { setActiveResult } = useActiveResult();
 
   const historyQuery = useQuery({
     queryKey: ['history'],
@@ -85,7 +87,15 @@ const Result = () => {
   }
 
   const analysis = prediction.analysis;
-  const metadata = (analysis?.analysis_metadata as Record<string, unknown>) || {};
+  const metadata = useMemo(() => {
+    const analysisMetadata = (analysis?.analysis_metadata as Record<string, unknown>) ?? {};
+    if (Object.keys(analysisMetadata).length > 0) {
+      return analysisMetadata;
+    }
+    return (
+      (prediction as PredictionResponse & { metadata?: Record<string, unknown> })?.metadata ?? {}
+    );
+  }, [analysis?.analysis_metadata, prediction]);
   const verification = (prediction as PredictionResponse & {
     verification?: { gradcam_image_url?: string | null } | null;
   })?.verification;
@@ -107,25 +117,51 @@ const Result = () => {
     '';
   const gradcamHeatmap = gradcamOverlaySource ? buildMediaUrl(gradcamOverlaySource) : '';
   const limeImageUrl = buildMediaUrl(analysis?.lime_image_url ?? '');
-  const structuredAnalysis: StructuredAnalysis = {
-    tldr:
-      (metadata.analysis_title as string) ||
-      (metadata.summary as string) ||
-      (metadata.tldr as string) ||
-      '',
-    key_findings: (metadata.key_findings as string[]) ?? (metadata.findings as string[]),
-    risk_level:
-      (metadata.risk_level as string) ??
-      (analysis?.prediction_label ? analysis.prediction_label.toLowerCase() : undefined),
-    risk_explanation: metadata.risk_explanation as string,
-    action_steps: (metadata.action_steps as string[]) ?? (metadata.next_steps as string[]),
-    model_name: analysis?.model?.name,
-    model_version: analysis?.model?.version,
-    raw_text:
-      (metadata.raw_text as string) ??
-      (metadata.analysis_text as string) ??
-      (metadata.full_text as string),
-  };
+  const structuredAnalysis: StructuredAnalysis = useMemo(
+    () => ({
+      tldr:
+        (metadata.analysis_title as string) ||
+        (metadata.summary as string) ||
+        (metadata.tldr as string) ||
+        '',
+      key_findings: (metadata.key_findings as string[]) ?? (metadata.findings as string[]),
+      risk_level:
+        (metadata.risk_level as string) ??
+        (analysis?.prediction_label ? analysis.prediction_label.toLowerCase() : undefined),
+      risk_explanation: metadata.risk_explanation as string,
+      action_steps: (metadata.action_steps as string[]) ?? (metadata.next_steps as string[]),
+      model_name: analysis?.model?.name,
+      model_version: analysis?.model?.version,
+      raw_text:
+        (metadata.raw_text as string) ??
+        (metadata.analysis_text as string) ??
+        (metadata.full_text as string),
+    }),
+    [analysis, metadata]
+  );
+
+  const resultId = analysis?.id ?? analysis?.analysis_id ?? (prediction as PredictionResponse & { id?: string })?.id ?? '';
+
+  useEffect(() => {
+    if (!resultId || !analysis || !imageUrl) return;
+
+    setActiveResult({
+      imageUrl,
+      analysis: structuredAnalysis,
+      metadata,
+      gradcam: analysis?.gradcam_image_url ?? null,
+      lime: analysis?.lime_image_url ?? null,
+    });
+  }, [
+    resultId,
+    analysis,
+    imageUrl,
+    metadata,
+    structuredAnalysis,
+    analysis?.gradcam_image_url,
+    analysis?.lime_image_url,
+    setActiveResult,
+  ]);
 
   const getPredictionDisplay = () => {
     switch (analysis?.prediction_label) {
@@ -168,10 +204,10 @@ const Result = () => {
 
         {/* Summary Card */}
         <Card className="mb-8">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={display.color}>{display.icon}</div>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={display.color}>{display.icon}</div>
                 <div>
                   <CardTitle className="text-3xl mb-2">Verification Results</CardTitle>
                   {display.badge}

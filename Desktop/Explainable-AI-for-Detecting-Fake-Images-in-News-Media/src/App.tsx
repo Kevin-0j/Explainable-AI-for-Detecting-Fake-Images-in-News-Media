@@ -15,7 +15,6 @@ import { AdminLogsViewer } from './components/admin/AdminLogsViewer';
 import { AdminAnalytics } from './components/admin/AdminAnalytics';
 import { AdminSystemSettings } from './components/admin/AdminSystemSettings';
 import { AdminAuthPage } from './components/admin/AdminAuthPage';
-import { useToolsContext } from './state/useToolsContext';
 import { BrowserRouter } from 'react-router-dom';
 import { api, USE_MOCK_API } from './services/api';
 import { MockApiService } from './services/mockApi';
@@ -93,7 +92,6 @@ export default function App() {
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const mockApi = useMemo(() => (USE_MOCK_API ? new MockApiService() : null), []);
-  const { imageUrl, analysis, metadata } = useToolsContext();
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -562,14 +560,7 @@ export default function App() {
       <div className="min-h-screen bg-background">
         {renderPage()}
         <button
-          onClick={() => {
-            useToolsContext.getState().setContext({
-              imageUrl: imageUrl || '',
-              analysis: analysis || {},
-              metadata: metadata || {},
-            });
-            window.location.href = '/journalist-tools';
-          }}
+          onClick={() => navigate('journalist-tools')}
           className="
             fixed bottom-6 right-6
             z-[9999]

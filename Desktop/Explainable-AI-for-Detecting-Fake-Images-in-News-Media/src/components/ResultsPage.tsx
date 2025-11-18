@@ -82,8 +82,18 @@ export function ResultsPage({ navigate, user, logout, result }: ResultsPageProps
     };
   }, [result]);
 
+  const resultSummary = useMemo(() => {
+    if (!result) return null;
+    return {
+      id: result.id,
+      prediction: result.result,
+      confidence: result.confidence,
+      fileName: result.fileName,
+    };
+  }, [result?.id]);
+
   useEffect(() => {
-    if (!result?.id) return;
+    if (!resultSummary) return;
 
     setAnalysis(null);
     setAnalysisError(null);
@@ -96,9 +106,9 @@ export function ResultsPage({ navigate, user, logout, result }: ResultsPageProps
       try {
         setIsExplanationLoading(true);
         const analysisPayload = await api.fetchExplanation({
-          prediction: result.result,
-          confidence: result.confidence / 100,
-          file_name: result.fileName,
+          prediction: resultSummary.prediction,
+          confidence: resultSummary.confidence / 100,
+          file_name: resultSummary.fileName,
         });
         if (!controller.signal.aborted) {
           setAnalysis(analysisPayload);
@@ -123,7 +133,7 @@ export function ResultsPage({ navigate, user, logout, result }: ResultsPageProps
     const fetchLime = async () => {
       try {
         setIsLimeLoading(true);
-        const limePayload = await api.fetchLimeVisualization(result.id);
+        const limePayload = await api.fetchLimeVisualization(resultSummary.id);
         if (!controller.signal.aborted) {
           setLimeImage(limePayload);
         }
@@ -145,7 +155,7 @@ export function ResultsPage({ navigate, user, logout, result }: ResultsPageProps
     fetchLime();
 
     return () => controller.abort();
-  }, [result, navigate]);
+  }, [resultSummary]);
 
   const confidenceLevel =
     result.confidence >= 90
