@@ -256,6 +256,8 @@ Heatmaps justify editorial decisions.
   "video_analysis": { ... }
 }
 
+```
+
 ## 9. Challenges
 
 ### 9.1 Dataset Challenges
