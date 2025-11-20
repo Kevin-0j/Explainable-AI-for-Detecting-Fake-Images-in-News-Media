@@ -1,316 +1,172 @@
-# NewsSight — Hybrid CNN-Based Fake Image & Video Detection System  
+# NewsSight — Hybrid CNN-Based Fake Image & Video Detection System
+
 **Explainable AI for Detecting Forged Images and Videos in Online News, Social Media, and Broadcast Media**
 
-NewsSight is an end-to-end deep learning system for detecting forged images and videos using two hybrid CNN models and explainable AI methods (Grad-CAM and LIME). It includes a full FastAPI backend, JWT authentication, model switching, video frame analysis, and a production-ready analysis pipeline.
+NewsSight is an end-to-end deep learning system designed to detect forged images and videos using **two specialized ResNet18 models** and **explainable AI techniques** (Grad-CAM + optional LIME). It features a production-ready **FastAPI backend** with JWT authentication, model switching, video frame analysis, history tracking, and automated reporting.
+
+Perfect for journalists, fact-checkers, newsrooms, and digital forensics teams.
 
 ---
 
-# Project Overview
+## Project Overview
 
-Fake and manipulated media spreads rapidly across:
+Manipulated media spreads rapidly across:
+- Online news websites
+- WhatsApp, Facebook, Instagram, TikTok, and X (Twitter)
+- Re-shared television clips
 
-- Online news platforms  
-- WhatsApp groups and Facebook posts  
-- TikTok, Instagram, and X (Twitter)  
-- Television broadcast clips re-shared online  
-
-NewsSight addresses this challenge by providing:
-
-### ✔️ Two specialized ResNet18-based models  
-### ✔️ Full image and video verification pipeline  
-### ✔️ Explainability through Grad-CAM and optional LIME  
-### ✔️ A production-ready FastAPI backend with JWT auth  
-### ✔️ Automated reports, history tracking, and analytics  
+**NewsSight** tackles this with:
+- Two complementary CNN models for different forgery types
+- Full image & video verification pipeline
+- Transparent, interpretable predictions via Grad-CAM
+- Secure, scalable FastAPI backend
+- CPU-only inference — runs anywhere
 
 ---
 
-# Models
+## Models
 
-## **1. StyleGAN-ResNet18 (Synthetic Forgeries)**
-- Trained on: **StyleGAN vs Real dataset**  
-- Purpose: Detect high-quality AI-generated synthetic images  
-- Best Val Accuracy: **95.50%**
+| Model                        | Training Data                                      | Purpose                                  | Performance              |
+|-----------------------------|-----------------------------------------------------|------------------------------------------|--------------------------|
+| **StyleGAN-ResNet18**       | Clean StyleGAN vs Real images                       | Detect high-quality AI-generated images  | **95.50% Accuracy**      |
+| **Combined-ResNet18**       | COCO + Fakeddit + StyleGAN + FaceForensics++        | Real-world misinformation & deepfakes    | **F1 ≈ 0.725** (high recall) |
 
-## **2. Combined-ResNet18 (Real-World Misinformation)**
-- Trained on: COCO + Fakeddit + StyleGAN + FaceForensics++  
-- Purpose: Detect real-world manipulated images & deepfake frames  
-- Best F1: **0.7249**
+### Model Switching
+Switch models on-the-fly via API:
+```bash
+GET  /models           → List available models
+POST /models/select    → Choose active model
+```
 
-### Model Switching  
-The backend exposes:
--GET /models
--POST /models/select
+## Key Features
 
-Allowing journalists to choose which model to analyze with.
+- **Dual-Model Hybrid Architecture**  
+  Switch instantly between two expert models:
+  - **StyleGAN-ResNet18** → 95.5% accuracy on clean AI-generated forgeries
+  - **Combined-ResNet18** → High recall on noisy, real-world misinformation (screenshots, memes, deepfakes)
 
----
+- **Full Image & Video Analysis Pipeline**  
+  - Supports JPG, PNG, MP4, MOV, and more
+  - Smart video sampling: up to **30 frames at 1 FPS**
+  - Per-frame prediction + overall **fake ratio**
+  - Grad-CAM heatmap on the most suspicious frame
 
-#  Key Features
+- **Trustworthy & Explainable Outputs**  
+  - Visual Grad-CAM heatmaps (shows exactly what the model "sees")
+  - Optional LIME for fine-grained patch-level explanations
+  - Helps journalists justify decisions with evidence
 
-### Image Forgery Detection  
-High confidence, explainable predictions for real vs fake images.
+- **Production-Grade FastAPI Backend**  
+  - JWT-based authentication & user management
+  - Full analysis history & search
+  - Admin analytics dashboard
+  - Model switching via API
+  - Automatic report generation
 
-### Video Forgery Detection  
-- Extract up to **30 frames** at **1 FPS**  
-- Run inference per frame  
-- Compute fake ratio  
-- Return video-level prediction  
-- Generate Grad-CAM for representative frame  
-
-### Explainability  
-- Grad-CAM overlays  
-- LIME (optional, disabled by default)  
-
-### Full API Backend  
-- JWT authentication  
-- User management  
-- History logging  
-- Admin dashboards  
-- Storage usage endpoints  
-
----
-
-# Requirements
-
-- **Python 3.10+**
-- FastAPI, Uvicorn
-- PyTorch + Torchvision
-- OpenCV + ffmpeg
-- pytorch-grad-cam
-- PIL / Pillow
-
-### Hardware  
-- **Training:** Google Colab CPU (free tier)  
-- **Development:** MacBook M3, 256GB SSD  
-- **Inference:** CPU-only supported  
+- **Runs Anywhere — No GPU Required**  
+  - Fully optimized for CPU inference
+  - Tested on MacBook, laptops, and low-cost servers
+  - Ideal for field journalists and small newsrooms
 
 ---
 
-# Local Setup
+## Tech Stack
 
-## 1. Clone the repository
+- **Backend**: FastAPI + Uvicorn + SQLAlchemy
+- **ML**: PyTorch, ResNet18, pytorch-grad-cam
+- **Processing**: OpenCV, ffmpeg, Pillow
+- **Auth**: JWT (PyJWT)
+- **Deployment**: CPU-only, lightweight, portable
+
+---
+
+## Project Structure
+
+```
+NewsSight/
+├── backend/              # FastAPI app, routes, services
+├── datasets/             # Training data & manifests
+├── models/               # Trained .pth files (not in Git)
+├── notebooks/            # Training & experimentation
+├── frontend/             # Optional React frontend
+├── defense.md            # Full technical report
+└── README.md             # This file
+```
+
+
+---
+
+## Quick Start
 
 ```bash
 git clone https://github.com/Kevin-0j/NewsSight.git
 cd NewsSight
-```
 
-# NewsSight Setup & Usage Guide
+# Create virtual env
+python3 -m venv venv && source venv/bin/activate  # Linux/macOS
+# or: venv\Scripts\activate                        # Windows
 
-## 2. Create a Virtual Environment
-
-### macOS/Linux
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-### Windows
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-### Install Dependencies
-```bash
 pip install --upgrade pip
 pip install -r requirements.txt
-```
 
-### (Optional) Install lighter CPU-only PyTorch
-```bash
+# Optional: lighter CPU-only PyTorch
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-```
 
-### Training the Models
+# Train models → Place .pth files in /models/ → Run:
 
-## Note: Model checkpoints are NOT committed to GitHub.
-You must train them locally or upload your own .pth files.
+Bashuvicorn backend.main:app --reload
+API: http://127.0.0.1:8000 | Docs: http://127.0.0.1:8000/docs
 
-## Train StyleGAN Model (Model A)
+# Login & get token
+curl -X POST http://127.0.0.1:8000/login -d '{"username":"user","password":"pass"}'
 
--Open Jupyter:
--jupyter notebook
--Run the notebook:
-```bash
-notebooks/train_stylegan_resnet18.ipynb
-```
--Outputs saved to:
-```bash
-models/stylegan_resnet18.pth
-```
--Train Combined Model (Model B)
+# Analyze image
+curl -X POST http://127.0.0.1:8000/predict -H "Authorization: Bearer <token>" -F "file=@suspect.jpg"
 
--Run:
-```bash
-notebooks/train_combined_resnet18.ipynb
-```
-Outputs saved to:
-```bash
-models/combined_resnet18.pth
-```
+# Analyze video
+curl -X POST http://127.0.0.1:8000/predict -H "Authorization: Bearer <token>" -F "file=@clip.mp4"
 
-### Running the Backend API
--Start FastAPI Server
+# Get explanation
+curl http://127.0.0.1:8000/explain?analysis_id=5
 
--From backend/:
-```bash
-uvicorn backend.main:app --reload
-```
-
--API available at:
-```bash
-http://127.0.0.1:5000
-```
-
--Test Health Endpoint
-```bash
-curl http://127.0.0.1:5000/health
-```
--Predict Real/Fake (Image)
--Multipart Upload
-```bash
-curl -X POST http://127.0.0.1:5000/predict \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@example.jpg"
-```
--Image via URL
-```bash
-curl -X POST http://127.0.0.1:5000/predict \
-  -H "Authorization: Bearer <token>" \
-  -F "image_url=https://example.com/image.jpg"
-```
-
--Predict Real/Fake (Video)
-```bash
-curl -X POST http://127.0.0.1:5000/predict \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@video.mp4"
-```
--Get Grad-CAM Explanation
-```bash
-curl http://127.0.0.1:5000/explain?analysis_id=12
-```
--Switch Models
--List All Models
-```bash
-curl http://127.0.0.1:5000/models
-```
--Select Model
-```bash
-curl -X POST http://127.0.0.1:5000/models/select \
-  -H "Content-Type: application/json" \
-  -d '{"model_name":"stylegan_resnet18"}'
-```
-
-### Project Structure
-
-```
-NewsSight/
-├── backend/
-│   ├── main.py                # FastAPI entry point
-│   ├── routes.py              # All endpoints
-│   ├── services/              # Processing logic
-│   ├── models/                # ORM & DB models
-│   ├── explainability/        # GradCAM + LIME utils
-│   ├── utils/                 # Video/image utils
-│   └── database.py            # SQLAlchemy session
-│
-├── datasets/
-│   ├── images/
-│   ├── manifests/
-│   └── deepfake_real/
-│
-├── models/                    # Saved .pth weights
-│
-├── notebooks/                 # Training notebooks
-│
-├── frontend/                  # React frontend (if included)
-│
-├── defense.md                 # Technical defense report
-└── README.md                  # This file
+# Switch model
+curl -X POST http://127.0.0.1:8000/models/select -H "Content-Type: application/json" -d '{"model_name":"combined_resnet18"}'
 
 ```
 
-### Release Packaging
+## Troubleshooting
 
--You may upload the following to GitHub Releases:
+| Issue                        | Solution                                                                                   |
+|------------------------------|--------------------------------------------------------------------------------------------|
+| Model not loading            | Ensure `.pth` files are placed in the `models/` directory                                 |
+| CUDA-related errors          | Ignore — the system is **CPU-only** by design. No GPU needed                               |
+| Video files not processed    | Install ffmpeg: <br>`sudo apt install ffmpeg` (Ubuntu) <br>`brew install ffmpeg` (macOS)   |
+| Port 8000 already in use     | Start server on a different port: <br>`uvicorn backend.main:app --reload --port 5001`      |
+| Authentication errors        | Make sure you send a valid JWT in the header: <br>`Authorization: Bearer <your-token>`     |
 
-```bash
-stylegan_resnet18.pth
-combined_resnet18.pth
-```
+---
 
--Dataset manifests
--Full backend & notebooks
--Demo screenshots
--Sample media
+## Future Work
 
--Recommended release ZIP:
-```bash
-newssight-v1.0.zip
-```
+- Replace ResNet18 with modern backbones (Vision Transformers, ConvNeXt)
+- Export models to ONNX/TensorRT for even faster CPU inference
+- Integrate reverse image search (Google/Tineye) and metadata analysis
+- Add temporal deepfake detection (X3D, TimeSformer)
+- Implement active learning loop with real journalist feedback
 
-###Troubleshooting
+---
 
-##Model not loading?
+## Summary
 
--Make sure models exist in:
-```bash
-models/stylegan_resnet18.pth
-models/combined_resnet18.pth
-```
-##CUDA errors?
+**NewsSight** is a **complete, production-ready, journalist-focused** fake media detection platform that delivers:
 
--Ignore — system is CPU-only by design.
+- **Hybrid dual-model strategy** — high accuracy on clean AI forgeries + robust performance on messy real-world content (screenshots, memes, deepfakes)
+- **Full image & video analysis** with smart frame sampling and fake-ratio scoring
+- **Transparent explainability** via Grad-CAM heatmaps (and optional LIME)
+- **Secure FastAPI backend** with JWT authentication, model switching, history tracking, and admin analytics
+- **Zero GPU dependency** — runs efficiently on any laptop or server
 
-## Video not processed?
+Designed from day one for **newsrooms, fact-checkers, and field journalists** who need trustworthy, explainable, and immediately deployable tools in the fight against misinformation.
 
--Install ffmpeg:
-```bash
-sudo apt install ffmpeg
-```
-## Server port in use?
-```bash
-uvicorn backend.main:app --reload --port 5001
-```
-### Authentication Flow
-
--POST /register
-
--POST /login → returns JWT
-
--Protected routes require:
-
--Authorization: Bearer <token>
-
-### Future Work
-
--Vision Transformers (ViT / ConvNeXt)
-
--ONNX Runtime for faster inference
-
--Metadata + reverse image search integration
-
--Temporal deepfake detection (X3D, TimeSformer)
-
--Active learning & retraining loop
-
-### Summary
-
-NewsSight is a complete, production-oriented fake media detection system supporting:
-
-Hybrid CNN model architecture
-
-Image & video forgery detection
-
-Grad-CAM & LIME explainability
-
-FastAPI backend with JWT auth
-
-Model switching
-
-Real-world misinformation robustness
-
-This README provides everything needed to run, train, deploy, and extend the system.
-
-© 2025 — Kevin Omondi Ojwang
-Explainable AI · Media Forensics · Computer Vision
+**© 2025 Kevin Omondi Ojwang**  
+*Explainable AI • Media Forensics • Responsible Journalism*
