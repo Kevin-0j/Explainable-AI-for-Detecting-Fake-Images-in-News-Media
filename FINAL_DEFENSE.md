@@ -354,7 +354,6 @@ newssight/
 ├── notebooks/
 ├── defense.md
 └── README.md
-
 ---
 
 ### 11.3 Computational Environment
