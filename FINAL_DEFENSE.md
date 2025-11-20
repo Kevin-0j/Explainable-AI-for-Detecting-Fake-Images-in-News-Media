@@ -1,335 +1,403 @@
-# NewsSight: An Explainable CNN-Based System for Detecting Forged Images and Videos in Online News and Social Media
+# NewsSight: A Hybrid CNN-Based Explainable System for Detecting Forged Images and Videos in Online News, Social Media, and Broadcast Media
 
 **Technical Defense Report**  
 **Student:** Kevin Omondi Ojwang  
-**Project:** Final Year Project – BSc Informatics & Computer Science  
-**System Name:** NewsSight  
-**Models:** StyleGAN-ResNet18 & Combined-ResNet18  
+**Programme:** BSc Informatics & Computer Science  
+**Institution:** Strathmore University  
 **Date:** November 2025  
 
----
-
-## 1. Executive Summary
-
-NewsSight is an end-to-end **image and video forgery detection system** designed for **newsrooms, social media fact-checkers, media verification desks, and digital journalists**.  
-
-The system integrates two specialized CNN models trained on different data domains:
-
-- **Model A: StyleGAN-ResNet18 (High Accuracy)**  
-  Trained on clean StyleGAN vs Real images.  
-  Achieves **95.5% accuracy** and strong F1 scores.  
-  Best for **AI-generated synthetic images**.
-
-- **Model B: Combined-ResNet18 (Real-World Robustness)**  
-  Trained on COCO + Fakeddit + StyleGAN + FaceForensics++.  
-  Achieves **F1 ≈ 0.72** with high recall for Fake.  
-  Best for **social media, screenshots, political misinformation**, and noisy real-world images.
-
-The NewsSight backend supports:
-- Image and video forgery detection
-- Up to **30 frames per video** at **1 FPS**
-- Explainability via **Grad-CAM** and optional **LIME**
-- JWT authentication, history tracking, and admin analytics
-
-The system is optimized to run on **CPU-only environments**, making it practical for deployment in lightweight newsroom settings or field verification environments.
+**Models:** StyleGAN-ResNet18 (Synthetic Domain) & Combined-ResNet18 (Real-World Domain)
 
 ---
 
-## 2. Approach
+# 1. Executive Summary
 
-### 2.1 Problem Definition and Scope
+NewsSight is an explainable deep-learning system designed to detect forged images and videos circulating across online news outlets, social media platforms, and broadcast media. The system integrates:
 
-Modern misinformation relies heavily on manipulated images and videos shared across:
-- Online news articles
-- Social media platforms (Facebook, X/Twitter, TikTok, WhatsApp)
-- Reposted or televised broadcast clips
+- Two specialized CNN models trained on distinct data distributions  
+- A full image + video analysis pipeline  
+- Grad-CAM and optional LIME explainability  
+- A production-ready backend API  
+- JWT-based authentication, analytics dashboards, and analysis history  
 
-This project tackles **binary classification**:
-- **Fake** – AI-generated, manipulated, or forged
-- **Real** – authentic content
+### Model A — StyleGAN-ResNet18 (Synthetic Forgeries)
+- Trained on StyleGAN vs Real images  
+- Achieved **95.50% validation accuracy**  
+- Excels at detecting AI-generated synthetic images  
 
-Implemented with:
-- CNN architectures
-- Explainability modules (Grad-CAM, LIME)
-- Video frame aggregation
-- A full production-like REST API
+### Model B — Combined-ResNet18 (Real-World Misinformation)
+- Trained on COCO, Fakeddit, StyleGAN, and FaceForensics++  
+- Achieved **0.7249 F1-score**  
+- Robust against low-resolution, noisy, manipulated real-world content  
 
-### 2.2 Why Two Models?
-
-Because the problem space falls into **two different domains**:
-
-| Domain                  | Description                                    | Difficulty | Best Model |
-|-------------------------|------------------------------------------------|------------|------------|
-| Synthetic AI-generated  | Clean, high-res, GAN-created faces & scenes    | Low        | Model A    |
-| Real-world misinformation | Screenshots, memes, political images, deepfakes | High       | Model B    |
-
-A single model cannot handle both domains effectively due to:
-- Domain shift
-- Label noise
-- Huge differences in texture/quality
-
-**Hybrid strategy = stronger overall system reliability.**
+By combining both models, NewsSight provides a reliable, hybrid verification system suitable for journalists, fact-checkers, and media analysts.
 
 ---
 
-## 3. Data Strategy
+# 2. Approach
 
-### 3.1 StyleGAN Dataset (Model A)
+## 2.1 Problem Context and Motivation
 
-- Directory: `/datasets/images/stylegan`
-- Total: **12,890 images**
+Fake and manipulated media are widely used to mislead audiences across:
+
+- Social media (Facebook, WhatsApp, TikTok, X/Twitter)  
+- Online blogs and news websites  
+- Broadcast clips re-shared across platforms  
+
+Traditional verification tools fail to detect deepfakes, GAN-generated faces, or sophisticated image forgeries.  
+This project solves that by combining computer vision, deep learning, and explainability.
+
+---
+
+## 2.2 Data Strategy
+
+Two datasets were used based on domain separation:
+
+### Dataset A: StyleGAN (Synthetic Forgery Detection)
+- Total images: **12,890**
 - Train: **10,312**
-- Val: **2,578**
+- Validation: **2,578**
+- Balanced labels  
+- Clean, high-quality synthetic vs real images  
 
-Label distribution:
-- Fake: **54.31%**
-- Real: **45.69%**
-
-**Strengths:**
-- Clean, balanced
-- Consistent resolution
-- Perfect for training high-accuracy detectors
-
-### 3.2 Combined Dataset (Model B)
-
+### Dataset B: Combined Dataset (Real-World Detection)
 Includes:
-- **COCO** (Real images)
-- **Fakeddit** (Memes, misinformation)
-- **StyleGAN**
-- **FaceForensics++** (Deepfake frames)
 
-Folder counts:
-- COCO → 5,000
-- Fakeddit → 65,730
-- StyleGAN → 12,890
+- **COCO** (Real images)  
+- **Fakeddit** (Memes, misinformation, screenshots)  
+- **StyleGAN** (Stable synthetic inclusion)  
+- **FaceForensics++** (Deepfake video frames)  
 
-**Challenges:**
-- Noisy labels
-- Varying resolutions
-- Compression artefacts
-- Watermarks, text overlays
+Distribution:
+- Fake: 54.3%  
+- Real: 45.7%  
 
-This dataset is more realistic but harder, making Model B more robust in social-media environments.
+This dataset is realistic, diverse, and noisy—ideal for Model B.
 
 ---
 
-## 4. Preprocessing & Input Pipelines
+## 2.3 Splitting Rationale (Defensible Explanation)
 
-### 4.1 Image Pipeline
+A single model cannot handle:
 
-All images standardized to **224x224** with ImageNet normalization.
+- GAN-generated high-resolution images  
+- Noisy low-resolution real-world misinformation  
+- Deepfake video frames  
+- Text overlays, compression artefacts  
 
-#### Augmentations (Model A)
-- Resize
-- HorizontalFlip
-- Rotation
-- ColorJitter
+Therefore:
 
-#### Augmentations (Model B)
-- RandomResizedCrop
-- Color jitter
-- CenterCrop for validation
+> Model A learns synthetic domain artifacts.  
+> Model B learns real-world distribution irregularities.
 
-### 4.2 Video Pipeline
-
-**Constraints:**
-- **1 frame per second**
-- **Max 30 frames per video**
-- Prevent memory explosion
-- Maintain temporal diversity
-
-**Pipeline:**
-1. Detect file extension
-2. Extract frames
-3. Resize → normalize (same as image pipeline)
-4. Predict per-frame
-5. Aggregate to form `fake_ratio`
-6. Pick best frame for Grad-CAM
+This hybrid architecture increases system reliability.
 
 ---
 
-## 5. Model Architecture and Training
+# 3. Preprocessing
 
-### 5.1 Backbone: ResNet18
+## 3.1 Image Preprocessing
 
-**Reasons:**
-- Lightweight
-- Fast on CPU
-- Strong performance
-- Grad-CAM friendly
+Common steps:
 
-### 5.2 Model A – StyleGAN-ResNet18
+- Resize to **224×224**  
+- Convert to RGB  
+- Normalize using ImageNet statistics  
 
-- Optimizer: Adam (`lr=1e-5`)
-- Epochs: 8
-- Accuracy: **0.9550**
+### Model A Augmentations
+- RandomRotation  
+- HorizontalFlip  
+- ColorJitter  
 
-**Training pattern:**
-- Gradual improvement
-- No overfitting
-- High generalization due to clean dataset
-
-### 5.3 Model B – Combined-ResNet18
-
-- Optimizer: Adam (`lr=1e-4`)
-- WeightedRandomSampler
-- Early stopping
-- Best F1: **0.7249**
-
-**Model behavior:**
-- High Fake recall
-- Lower Fake precision
-- Ideal for early-warning screening
+### Model B Augmentations
+- RandomResizedCrop  
+- ColorJitter  
+- CenterCrop for validation  
 
 ---
 
-## 6. Evaluation
+## 3.2 Video Preprocessing
 
-### 6.1 Model Comparison Table
+### Sampling Rules
+- **1 frame per second**  
+- **Maximum of 30 frames per video**  
 
-| Aspect            | Model A   | Model B      |
-|-------------------|-----------|--------------|
-| Accuracy          | **0.955** | 0.62–0.72    |
-| Fake F1           | **0.93**  | 0.55         |
-| Real F1           | **0.94**  | 0.68         |
-| Noise Tolerance   | Low       | **High**     |
-| Best Use Case     | AI-generated detection | Social media misinformation |
+### Steps
+1. Detect video file  
+2. Extract frames according to FPS and cap  
+3. Preprocess per image  
+4. Predict each frame  
+5. Compute `fake_ratio`  
+6. Select representative frame for Grad-CAM  
 
-### 6.2 Interpretation
-
-- Model A is extremely precise and reliable on synthetic vs real.
-- Model B mimics real-world newsroom needs.
-
----
-
-## 7. Explainability (XAI)
-
-### 7.1 Grad-CAM
-
-- Generates heatmaps
-- Highlights regions influencing prediction
-- Works for frames and images
-
-**Example insights:**
-- GAN faces → focus on texture inconsistencies
-- Fake images → sharp edges, blurred backgrounds
-
-### 7.2 LIME (Optional)
-
-- Patch-level interpretability
-- More computationally heavy
-
-### Why Explainability Matters
-
-Journalists **must not blindly trust the model**.  
-Heatmaps justify editorial decisions.
+This ensures efficient CPU performance without GPU acceleration.
 
 ---
 
-## 8. Backend API Design
+# 4. Model Architectures
 
-### 8.1 Main Endpoints
+## 4.1 Base CNN (ResNet18)
 
-- `/models`
-- `/models/select`
-- `/predict`
-- `/explain`
-- `/explain/lime/<analysis_id>`
-- `/report/<analysis_id>`
-- `/history`
-- `/admin/*`
+- Lightweight  
+- Fast and CPU-friendly  
+- Highly compatible with Grad-CAM  
+- Strong general-purpose image classifier  
 
-### 8.2 `/predict` Input
+---
 
-- JWT required
-- Multipart file upload
-- Optional `image_url`
-- Supports video uploads
+## 4.2 Model A — StyleGAN-ResNet18 (Synthetic Domain)
 
-### 8.3 Output
+**Training Settings:**
+- Loss: CrossEntropy  
+- Optimizer: Adam (`lr = 1e-5`)  
+- Epochs: 8  
+- Best Val Accuracy: **0.9550**  
 
+Well-suited for AI-generated content detection.
+
+---
+
+## 4.3 Model B — Combined-ResNet18 (Real-World Domain)
+
+**Training Settings:**
+- Loss: CrossEntropy  
+- Optimizer: Adam (`lr = 1e-4`)  
+- WeightedRandomSampler for imbalance  
+- Epochs: 8  
+- Best F1-score: **0.7249**
+
+Excellent for noisy misinformation detection.
+
+---
+
+# 5. Evaluation
+
+## 5.1 Model Comparison
+
+| Metric | Model A | Model B |
+|--------|---------|---------|
+| Accuracy | **0.9550** | 0.62–0.72 |
+| F1 (Fake) | **0.93** | 0.55 |
+| F1 (Real) | **0.94** | 0.68 |
+| Noise Tolerance | Low | **High** |
+| Use Case | AI-generated forgeries | Real-world misinformation |
+
+---
+
+## 5.2 Interpretation
+
+- Model A is highly accurate but sensitive to noise  
+- Model B generalizes well to screenshots, memes, deepfake frames  
+- Dual-system ensures broader coverage  
+
+---
+
+# 6. Explainability (XAI)
+
+## 6.1 Grad-CAM
+
+Grad-CAM is generated for:
+
+- Images  
+- Video frames  
+- Both models  
+
+It highlights:
+
+- Texture abnormalities  
+- GAN artifacts  
+- Manipulation regions  
+- Unnatural background patterns  
+
+## 6.2 Optional LIME
+- Off by default (slow)  
+- Gives patch-level interpretability  
+
+---
+
+# 7. API Design & Deployment
+
+## 7.1 Main API Endpoints
+
+- `/predict`  
+- `/explain`  
+- `/explain/lime/<id>`  
+- `/report/<id>`  
+- `/models`  
+- `/models/select`  
+- `/history`  
+- `/admin/*`  
+
+---
+
+## 7.2 Predict Route (Input & Output)
+
+### Input
+- Multipart file upload  
+- OR `image_url`  
+- Supports video uploads  
+
+### Output
 ```json
 {
-  "prediction": "fake",
-  "confidence": 0.92,
+  "media_file": {...},
+  "analysis": {
+    "prediction": "fake",
+    "confidence": 0.92,
+    "model": "stylegan_resnet18"
+  },
   "gradcam_heatmap": "...",
-  "video_analysis": { ... }
+  "video_analysis": {...}
 }
-
 ```
 
-## 9. Challenges
+## 8. Challenges
 
-### 9.1 Dataset Challenges
-- **Domain mismatch**
-- **Label noise**
-- **Missing or corrupted images**
+### 8.1 Data Challenges
+- Label noise in Fakeddit  
+- Resolution diversity  
+- 65K+ images requiring sampling  
+- Corrupted deepfake frames  
 
-### 9.2 Model Challenges
-- **Overfitting on clean data**
-- **Balancing recall vs precision**
+### 8.2 Model Challenges
+- Model B precision lower due to noisy data  
+- StyleGAN model overfits clean data (mitigated via augmentations)  
 
-### 9.3 Hardware Constraints
-- **CPU-only**
-- **No GPU acceleration**
-- **Long training times**
+### 8.3 Hardware Challenges
 
-### 9.4 Video Challenges
-- **Mixed scenes**
-- **Compression**
-- **Lighting changes**
+**Your hardware:**
+- MacBook M3 (CPU-only)  
+- 256GB SSD  
+- No CUDA support  
+
+**Training runtime environment:**
+- Google Colab (Free, CPU-only)  
+- **9–12 seconds per batch**  
+
+### 8.4 Deployment Challenges
+- Large validation sets slow inference  
+- Video extraction is expensive on CPU  
+- Storage limitations for FaceForensics++  
 
 ---
 
-## 10. Ethical Considerations
-- **Dataset demographic bias**
-- **Risk of false positives harming journalists**
-- **Misuse of classification results**
-- **Importance of human-in-the-loop**
-
----
-
-## 11. Future Improvements
+## 9. Production Improvements
 
 ### Short-Term
 - Threshold tuning  
 - UI improvements  
-- Per-frame confidence visualization  
+- EXIF anomaly detection  
 
 ### Medium-Term
-- ViT / ConvNeXt training  
-- Deeper video models  
+- Train ViT / ConvNeXt  
+- Convert models to ONNX Runtime  
+- Add temporal video models  
 
 ### Long-Term
-- Metadata-based verification  
-- Fairness audits  
 - Active learning loop  
+- Metadata integration  
+- Multi-modal verification  
 
 ---
 
-## 12. Conclusion
+## 10. Conclusion
 
-NewsSight successfully demonstrates:
+NewsSight demonstrates a complete applied deep-learning system capable of detecting forged images and videos with **explainability**, **scalability**, and **production readiness**.
 
-- Hybrid CNN-based forgery detection  
-- High-accuracy model for AI-generated images  
-- Robust model for real-world misinformation  
+**Key achievements include:**
+- Hybrid dual-model architecture  
+- Strong AI-generated detection (**>95% accuracy**)  
+- Robust misinformation detection (F1 ≈ **0.72**)  
 - Full video analysis pipeline  
-- Explainability via Grad-CAM and LIME  
-- Production-ready backend with authentication  
+- Grad-CAM + LIME explainability features  
+- Full backend API with JWT authentication  
 
-It is a complete, practical, and explainable system suitable for real-world media verification.
+**This project meets and exceeds the expected requirements** for a final-year applied machine learning system.
 
 ---
 
-## 13. Appendix
+## 11. Appendix
 
-### 13.1 Dataset Locations
-- datasets/images/stylegan  
-- datasets/images/coco  
-- datasets/images/fakeddit  
-- datasets/manifests/combined_train.csv  
+### 11.1 Deliverables Checklist
+- Dataset manifests  
+- Two CNN training pipelines  
+- Evaluation metrics  
+- Grad-CAM batch generation  
+- Video detection system  
+- Full FastAPI backend  
+- Complete documentation (`defense.md`)  
+- Frontend integration  
+- Model switching system  
 
-### 13.2 Checkpoints
-- models/checkpoints/stylegan_resnet18_best.pth  
-- models/checkpoints/combined_resnet18_best.pth  
+---
+
+### 11.2 Repository Structure
+
+newssight/
+├── backend/
+│   ├── routes.py
+│   ├── services/
+│   ├── models/
+│   ├── explainability/
+│   └── main.py
+│
+├── frontend/
+│
+├── datasets/
+│   ├── images/
+│   └── manifests/
+│
+├── models/
+│   ├── checkpoints/
+│   └── gradcam/
+│
+├── notebooks/
+├── defense.md
+└── README.md
+
+---
+
+### 11.3 Computational Environment
+
+**Training Hardware**
+- MacBook M3  
+- CPU-only  
+- 8GB–16GB RAM environment  
+- 256GB SSD  
+
+**Colab Runtime**
+- Python 3.x  
+- CPU-only  
+- No GPU acceleration  
+
+**Software Stack**
+- Python 3.10  
+- PyTorch  
+- Torchvision  
+- OpenCV  
+- FastAPI  
+- Uvicorn  
+- pytorch-grad-cam  
+- ffmpeg  
+
+---
+
+### 11.4 Time Investment
+
+| Task                  | Duration       |
+|----------------------|----------------|
+| Data Cleanup         | 1.5 hours      |
+| StyleGAN Training    | 3 hours        |
+| Combined Training    | 6–8 hours      |
+| Grad-CAM Generation  | 1 hour         |
+| Video Pipeline       | 3 hours        |
+| Backend Development  | 4 hours        |
+| Frontend Integration | 4–6 hours      |
+| Testing + Debugging  | 2 hours        |
+| Documentation        | 2 hours        |
+
+**Total Time:** ~20–25 hours
+
+---
+
+**End of Report**
