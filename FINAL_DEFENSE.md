@@ -333,6 +333,7 @@ NewsSight demonstrates a complete applied deep-learning system capable of detect
 
 ### 11.2 Repository Structure
 
+````
 newssight/
 ├── backend/
 │   ├── routes.py
@@ -354,6 +355,8 @@ newssight/
 ├── notebooks/
 ├── defense.md
 └── README.md
+
+````
 ---
 
 ### 11.3 Computational Environment
