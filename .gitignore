@@ -1,0 +1,23 @@
+# Python environments
+venv/
+venv310/
+Desktop/Explainable-AI-for-Detecting-Fake-Images-in-News-Media/venv310/
+
+# Cache & build
+__pycache__/
+*.pyc
+
+# Node / React
+node_modules/
+
+# Runtime uploads
+uploads/
+
+# Model artifacts
+models/
+backend/model/
+*.pth
+
+# Secrets
+.env
+.env.local
